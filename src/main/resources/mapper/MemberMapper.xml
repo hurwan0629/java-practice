@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.MemberMapper">
+
+    <select id="findAll" resultType="com.example.demo.domain.Member">
+        SELECT member_pk, member_name, member_id, member_password_hash, member_email
+        FROM member
+    </select>
+
+    <select id="findByPk" parameterType="java.lang.Long" resultType="com.example.demo.domain.Member">
+        SELECT member_pk, member_name, member_id, member_password_hash, member_email
+        FROM member
+        WHERE member_pk=#{memberPk}
+    </select>
+
+    <select id="findById" parameterType="String" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM member
+        WHERE member_id=#{memberId}
+    </select>
+
+    <select id="checkMemberUniqueWithId" parameterType="String" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM member
+        WHERE member_id=#{memberId}
+    </select>
+
+    <select id="getMemberNameAndPasswordHashById" parameterType="String" resultType="com.example.demo.dto.MemberAuthInfo">
+        SELECT
+            member.member_pk AS memberPk,
+            member.member_name AS memberName,
+            member.member_password_hash AS memberPasswordHash
+        FROM member
+        WHERE member_id=#{memberId}
+    </select>
+
+    <insert id="insert"
+            parameterType="com.example.demo.domain.Member"
+            useGeneratedKeys="true"
+            keyProperty="memberPk">
+        INSERT INTO member (member_name, member_id, member_password_hash, member_email)
+        VALUES (#{memberName}, #{memberId}, #{memberPasswordHash}, #{memberEmail})
+    </insert>
+</mapper>
