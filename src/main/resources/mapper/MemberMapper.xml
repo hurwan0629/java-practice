@@ -36,6 +36,16 @@
         WHERE member_id=#{memberId}
     </select>
 
+    <select id="getMemberInfoByPk" parameterType="java.lang.Long" resultType="com.example.demo.dto.MemberInfoResponse">
+        SELECT
+            member.member_pk AS memberPk,
+            member.member_name AS memberName,
+            member.member_id AS memberId,
+            member.member_email AS memberEmail
+        FROM member
+        WHERE member_pk=#{memberPk}
+    </select>
+
     <insert id="insert"
             parameterType="com.example.demo.domain.Member"
             useGeneratedKeys="true"

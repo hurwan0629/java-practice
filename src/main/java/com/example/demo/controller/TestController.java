@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.service.JwtService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,6 +10,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 public class TestController {
+
+    @Autowired
+    private JwtService jwtService;
 
     public static AtomicInteger a= new AtomicInteger(0);
 
@@ -40,7 +44,7 @@ public class TestController {
     ) {
         System.out.println(authorization);
         String token = authorization.replace("Bearer ", "");
-        String username = JwtService.getUsername(token);
+        String username = jwtService.getMemberPk(token);
 
         return ResponseEntity.ok(Map.of("username", username));
     }

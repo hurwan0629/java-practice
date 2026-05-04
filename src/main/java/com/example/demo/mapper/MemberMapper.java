@@ -2,6 +2,7 @@ package com.example.demo.mapper;
 
 import com.example.demo.domain.Member;
 import com.example.demo.dto.MemberAuthInfo;
+import com.example.demo.dto.MemberInfoResponse;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -21,6 +22,8 @@ public interface MemberMapper {
     Long checkMemberUniqueWithId(String memberId);
 
     MemberAuthInfo getMemberNameAndPasswordHashById(String memberId);
+
+    MemberInfoResponse getMemberInfoByPk(Long memberPk);
 
     int insert(Member member);
 }
