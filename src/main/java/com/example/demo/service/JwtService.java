@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import io.jsonwebtoken.Jwts;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +15,7 @@ io.jsonwebtoken 0.13.0 버전을 이용하였으며 아래에 추가적인 주�
 @Service
 public class JwtService {
     // 특정 길이 이상의 시크릿 키만을 허용해주는 것을 확인하였습니다.
-    @Value("${app.cookie.jwt-secret}")
+    @Autowired
     private SecretKey key;
     @Value("${app.jwt.expiration-millis}")
     private long expirationMillis;
