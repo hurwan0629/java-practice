@@ -14,6 +14,10 @@ import java.util.Arrays;
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
 
+    private final String[] passing ={
+            "/post/max-page"
+    };
+
     @Autowired
     private JwtService jwtService;
 
@@ -23,6 +27,19 @@ public class AuthInterceptor implements HandlerInterceptor {
             HttpServletResponse response,
             Object handler
     ) throws Exception {
+
+        String uri = request.getRequestURI();
+        String contextPath = request.getContextPath();
+        if(uri.startsWith(contextPath)) {
+            uri = uri.substring(contextPath.length());
+        }
+
+        for (String passUrl: passing) {
+            if(request.getRequestURL().equals(passUrl)) {
+                return true;
+            }
+        }
+
         Cookie[] cookies = request.getCookies();
 
         if (cookies == null) {
@@ -43,7 +60,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 
         try {
             String memberPk = jwtService.getMemberPk(token);
-            request.setAttribute("memberPk", memberPk);
+            request.setAttribute("memberPk", Long.parseLong(memberPk));
             return true;
         } catch (Exception e) {
             unauthorized(response, "유효하지 않은 토큰입니다.");

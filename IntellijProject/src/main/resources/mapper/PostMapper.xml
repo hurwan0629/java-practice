@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTO Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.mapper.PostMapper">
+
+    <select id="getPostByPk" parameterType="java.lang.Long" resultType="com.example.demo.dto.PostViewResponse">
+        SELECT
+            post.post_pk AS postPk,
+            post.post_title AS postTitle,
+            post.post_content AS postContent,
+            post.post_created_at AS postCreatedAt,
+            post.post_updated_at AS postUpdatedAt,
+            member.member_id AS writerId,
+            member.member_pk AS writerPk
+        FROM post
+        INNER JOIN member
+        ON post.writer_pk = member.member_pk
+        WHERE post_pk = #{postPk}
+    </select>
+
+    <insert id="createPost"
+            parameterType="com.example.demo.dto.PostCreateRequest"
+            useGeneratedKeys="true"
+            keyProperty="postPk">
+        INSERT INTO post (
+            post_title,
+            post_content,
+            writer_id
+        )
+        VALUES (
+            #{postTitle},
+            #{postContent},
+            #{memberPk}
+        )
+    </insert>
+
+    <select id="getMaxPageCount" parameterType="Integer" resultType="java.lang.Long">
+        SELECT
+            CEIL(COUNT(*)::numeric /#{maxPostCount}) AS maxPageCount
+        FROM post
+    </select>
+
+    <select
+            id="getPostAll"
+            resultType="com.example.demo.dto.PostBoardResponse">
+        SELECT
+            post.post_pk AS postPk,
+            post.post_title AS postTitle,
+            member.member_id AS writerId,
+            post.post_created_at AS postCreatedAt,
+            post.post_view_count AS postViewCount
+        FROM post
+        INNER JOIN member
+        ON post.writer_pk = member.member_pk
+        ORDER BY post.post_created_at DESC, post.post_pk DESC
+        LIMIT #{limit}
+        OFFSET #{offset}
+    </select>
+
+</mapper>

@@ -125,9 +125,8 @@ public class MemberController {
 
     @GetMapping("/me")
     public ResponseEntity<MemberInfoResponse> memberInfo(
-            @RequestAttribute("memberPk") String stringMemberPk
+            @RequestAttribute("memberPk") Long memberPk
     ) {
-        Long memberPk = Long.parseLong(stringMemberPk);
 
         return ResponseEntity.ok(memberMapper.getMemberInfoByPk(memberPk));
     }
