@@ -42,8 +42,6 @@ public class WebConfig {
                                 "/member/login",
                                 "/member/register",
                                 "/member/check-id",
-                                "/post/{post_id}",
-                                "/post/max-page",
                                 "/test"
                         );
             }

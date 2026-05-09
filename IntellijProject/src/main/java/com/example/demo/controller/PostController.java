@@ -32,13 +32,11 @@ public class PostController {
 
     @GetMapping("/{post_pk}")
     public ResponseEntity<?> getPostByPk(
-            @PathVariable Long post_pk,
-            @RequestAttribute("member_pk") Long memberPk
+            @PathVariable("post_pk") Long postPk
     ) {
-        System.out.println("/post");
-        System.out.println("회원번호 " + memberPk + " 의 요청");
+        System.out.println("/post/"+ postPk);
 
-        PostViewResponse response = postMapper.getPostByPk(post_pk);
+        PostViewResponse response = postMapper.getPostByPk(postPk);
 
         if(response == null) {
             throw new PostNotFoundException();

@@ -15,4 +15,27 @@
     - url: 드라이버 생성 시 필요한 DB서버 url (jdbc:postgresql://출처/테이블)
     - username: 스키마 이름
     - password: 스키마 비밀번호
-- -mybatis.mapper-locations-: 현재는 어노테이션을 쓰기 때문에 필요 없지만 DAO 방식을 사용할 때에는 필수적으로 해야하는 설정 
+- -mybatis.mapper-locations-: 현재는 어노테이션을 쓰기 때문에 필요 없지만 DAO 방식을 사용할 때에는 필수적으로 해야하는 설정
+
+# 프로젝트 이해
+## 2026-05-09
+### 기본 요청 매핑
+- TestController은 이제 안쓰는 클래스이다.
+- MemberController은 기본적인 로그인, 로그아웃 상태관리에만 사용중이다.
+- Post /login 
+  을 받을때에는 특별히 비즈니스 로직으로 뺴지 않고 직접 id체크, 비번체크, ResponseCookie 생성까지 담당해준다.
+### 웹 설정
+- 빈 방식으로 WebMvcConfigurer 객체 생성하는 로직으로 WebMvcConfigurer 인터페이스 익명 구현체를 생성하는 방식을 사용했다.
+  addCorsMappings(registry), addInterceptors(InterceptorRegistry registry)
+  를 통해 메서드를 생성하였다.
+- PasswordConfig를 통해 BCryptPasswordEncoder 빈을 만들었다.
+- 예외 같은 경우에는 권한검사 에외, 포스트 탐지 예외, 서버 에러를 따로 만들어주었다.
+### DB 설정
+- MyBatis 방식의 `@Mapper` 방식을 사용하였다.
+- Postgresql을 사용하였으며 설치가 귀찮아 도커를 썼다.
+- 대부분의 Mapper의 파라미터 및 반환값은 dto로 만들어서 사용하였다.
+- lombok는 그냥 귀찮아서 안넣었는데 슬슬 넣을까 생각중
+- 
+### 인증/인가 설정
+- interceptor/AuthInterceptor 에서 요청 uri를 뜯어보아 인증이 필요할 경우 쿠키를 전부 뜯으면서 첫번째 값을 탐색 -> 존재해야 true + memberPk를 Long로 치환하여 request.setAttribute를 해준다.
+- 

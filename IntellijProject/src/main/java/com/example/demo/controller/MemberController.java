@@ -85,7 +85,9 @@ public class MemberController {
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
-                    .body(Map.of("memberName", memberAuthInfo.getMemberName()));
+                    .body(Map.of(
+                            "memberName", memberAuthInfo.getMemberName(),
+                            "memberPk", memberAuthInfo.getMemberPk()));
         }
         else {
             throw new LoginFailedException("아이디가 2개 이상 존재합니다.");

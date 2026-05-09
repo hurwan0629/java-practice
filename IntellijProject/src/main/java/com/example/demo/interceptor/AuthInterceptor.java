@@ -15,7 +15,10 @@ import java.util.Arrays;
 public class AuthInterceptor implements HandlerInterceptor {
 
     private final String[] passing ={
-            "/post/max-page"
+            "GET /post/max-page",
+            "GET /post/{var}",
+            "DELETE /post/{var}",
+            "OPTIONS /post/{var}"
     };
 
     @Autowired
@@ -34,10 +37,8 @@ public class AuthInterceptor implements HandlerInterceptor {
             uri = uri.substring(contextPath.length());
         }
 
-        for (String passUrl: passing) {
-            if(request.getRequestURL().equals(passUrl)) {
-                return true;
-            }
+        if (isPassingRequest(request.getMethod(), uri)) {
+            return true;
         }
 
         Cookie[] cookies = request.getCookies();
@@ -73,5 +74,29 @@ public class AuthInterceptor implements HandlerInterceptor {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         response.getWriter().write("{\"message\":\"" + message + "\"}");
+    }
+
+    private boolean isPassingRequest(String requestMethod, String requestUri) {
+        for (String passUrl: passing) {
+            String[] parts = passUrl.split(" ", 2);
+
+            if (parts.length != 2) {
+                continue;
+            }
+
+            String passMethod = parts[0];
+            String passUri = parts[1];
+
+            if (passMethod.equals(requestMethod) && matchesUri(passUri, requestUri)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean matchesUri(String passUri, String requestUri) {
+        String regex = passUri.replaceAll("\\{[^/]+}", "[^/]+");
+        return requestUri.matches("^" + regex + "$");
     }
 }
