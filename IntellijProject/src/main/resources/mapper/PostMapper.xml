@@ -17,7 +17,7 @@
         FROM post
         INNER JOIN member
         ON post.writer_pk = member.member_pk
-        WHERE post_pk = #{postPk}
+        WHERE post_pk = #{postPk} AND post_deleted = false
     </select>
 
     <insert id="createPost"
@@ -36,10 +36,12 @@
         )
     </insert>
 
-    <select id="getMaxPageCount" parameterType="Integer" resultType="java.lang.Long">
+    <select id="getMaxPageCount"
+            parameterType="Integer" resultType="java.lang.Long">
         SELECT
             CEIL(COUNT(*)::numeric /#{maxPostCount}) AS maxPageCount
         FROM post
+        WHERE post_deleted = false
     </select>
 
     <select
@@ -54,9 +56,45 @@
         FROM post
         INNER JOIN member
         ON post.writer_pk = member.member_pk
+        WHERE post.post_deleted = false
         ORDER BY post.post_created_at DESC, post.post_pk DESC
         LIMIT #{limit}
         OFFSET #{offset}
+    </select>
+
+    <select id="checkPostByPk"
+            parameterType="java.lang.Long"
+            resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM post
+        WHERE post_pk=#{postPk}
+            AND post_deleted = false
+    </select>
+
+    <select  id="deletePostByPk"
+            parameterType="java.lang.Long"
+            resultType="com.example.demo.dto.PostDeleteResponse">
+        UPDATE post
+        SET post_deleted = true
+        WHERE post_pk=#{postPk}
+            AND post_deleted = false
+        RETURNING
+            post_pk AS postPk,
+            post_deleted AS postDeleted
+    </select >
+
+    <select id="updatePostTitleAndPostContentByPk"
+            parameterType="com.example.demo.dto.PostUpdateDto"
+            resultType="com.example.demo.dto.PostUpdateDto">
+        UPDATE post
+        SET post_title=#{postTitle},
+            post_content=#{postContent},
+            post_updated_at=now()
+        WHERE post_pk=#{postPk} AND post_deleted=false
+        RETURNING
+            post_pk AS postPk,
+            post_title AS postTitle,
+            post_content AS postContent
     </select>
 
 </mapper>

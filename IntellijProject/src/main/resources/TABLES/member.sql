@@ -14,3 +14,5 @@ SELECT
     member.member_password_hash AS memberPasswordHash
 FROM member
 WHERE member_id='hurwan0629';
+
+SELECT * FROM post WHERE post_deleted = true;

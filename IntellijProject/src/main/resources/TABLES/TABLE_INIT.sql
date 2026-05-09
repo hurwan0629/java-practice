@@ -14,6 +14,7 @@ CREATE TABLE post (
     post_view_count BIGINT DEFAULT 0 NOT NULL,
     post_created_at TIMESTAMP NOT NULL DEFAULT now(),
     post_updated_at TIMESTAMP NULL,
+    post_deleted BOOLEAN DEFAULT false,
 
     CONSTRAINT fk_post_writer
         foreign key (writer_pk)

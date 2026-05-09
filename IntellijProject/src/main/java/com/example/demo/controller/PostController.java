@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.PostCreateRequest;
+import com.example.demo.dto.PostUpdateDto;
 import com.example.demo.dto.PostViewResponse;
 import com.example.demo.exception.PostNotFoundException;
 import com.example.demo.mapper.PostMapper;
@@ -74,16 +75,27 @@ public class PostController {
 
     @DeleteMapping("/{post_pk}")
     public ResponseEntity<?> deletePost(
-            @PathVariable Long post_pk
+            @PathVariable("post_pk") Long postPk
     ) {
-        return null;
+        Integer count = postMapper.checkPostByPk(postPk);
+
+        if(count <= 0) {
+            throw new PostNotFoundException();
+        }
+
+        return ResponseEntity.ok(this.postMapper.deletePostByPk(postPk));
     }
 
     @PatchMapping("/{post_pk}")
     public ResponseEntity<?> updatePost(
-            @PathVariable Long post_pk
-    ) {
-        return null;
+            @PathVariable("post_pk") Long postPk,
+            @RequestBody PostUpdateDto request
+            ) {
+        if(postMapper.checkPostByPk(postPk) <= 0) {
+            throw new PostNotFoundException();
+        }
+        request.setPostPk(postPk);
+        return ResponseEntity.ok(this.postMapper.updatePostTitleAndPostContentByPk(request));
     }
 
 }
