@@ -11,7 +11,7 @@ public interface PostMapper {
 
     PostViewResponse getPostByPk(Long postPk);
 
-    void createPost(PostCreateRequest request);
+    Long createPost(PostCreateRequest request);
 
     Long getMaxPageCount(Integer maxPostCount);
 

@@ -23,11 +23,12 @@
     <insert id="createPost"
             parameterType="com.example.demo.dto.PostCreateRequest"
             useGeneratedKeys="true"
-            keyProperty="postPk">
+            keyProperty="postPk"
+            keyColumn="post_pk">
         INSERT INTO post (
             post_title,
             post_content,
-            writer_id
+            writer_pk
         )
         VALUES (
             #{postTitle},

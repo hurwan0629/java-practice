@@ -30,12 +30,13 @@ public class AuthInterceptor implements HandlerInterceptor {
             HttpServletResponse response,
             Object handler
     ) throws Exception {
-
         String uri = request.getRequestURI();
         String contextPath = request.getContextPath();
         if(uri.startsWith(contextPath)) {
             uri = uri.substring(contextPath.length());
         }
+
+        System.out.println(request.getMethod() + uri);
 
         if (isPassingRequest(request.getMethod(), uri)) {
             return true;
