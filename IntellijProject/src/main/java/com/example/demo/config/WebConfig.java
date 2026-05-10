@@ -30,20 +30,14 @@ public class WebConfig {
                         .allowedOrigins("https://hoppscotch.io",
                                         "http://localhost:3000")
                         .allowCredentials(true)
-                        .allowedMethods("GET", "POST", "DELETE", "PUT", "PATCH")
+                        .allowedMethods("GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS")
                         .allowedHeaders("*");
             }
 
             @Override
             public void addInterceptors(InterceptorRegistry registry) {
                 registry.addInterceptor(authInterceptor)
-                        .addPathPatterns("/**")
-                        .excludePathPatterns(
-                                "/member/login",
-                                "/member/register",
-                                "/member/check-id",
-                                "/test"
-                        );
+                        .addPathPatterns("/**");
             }
         };
     }

@@ -59,7 +59,7 @@ public class MemberController {
         ) {
         System.out.println(request);
         MemberLoginResponse result
-                = memberService.tryMemberLogin(
+                = memberService.login(
                         request.getMemberId(),
                         request.getMemberPassword());
 
@@ -100,7 +100,7 @@ public class MemberController {
 //        System.out.println(request);
 //        System.out.println(member);
 
-        return ResponseEntity.ok(Map.of("memberPk", this.memberService.memberRegister(request
+        return ResponseEntity.ok(Map.of("memberPk", this.memberService.register(request
         )));
     }
 

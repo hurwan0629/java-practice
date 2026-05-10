@@ -1,7 +1,7 @@
 package com.example.demo.interceptor;
 
 import com.example.demo.exception.ForbiddenRequestException;
-import com.example.demo.exception.MemberUnathorizationException;
+import com.example.demo.exception.MemberUnauthorizedException;
 import com.example.demo.service.JwtService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,17 +10,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-import java.io.IOException;
 import java.util.Arrays;
 
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
 
     private final String[] passing ={
+            "POST /member/login",
+            "POST /member/register",
+            "GET /member/check-id",
             "GET /post/max-page",
             "GET /post/{var}",
             "GET /post/all",
-            "OPTIONS /post/{var}"
+            "GET /test"
     };
 
     private final String[] forbidden = {
@@ -44,6 +46,10 @@ public class AuthInterceptor implements HandlerInterceptor {
 
         System.out.println(request.getMethod() + uri);
 
+        if ("OPTIONS".equals(request.getMethod())) {
+            return true;
+        }
+
         if (isRequestIncludedIn(this.passing, request.getMethod(), uri)) {
             return true;
         }
@@ -54,7 +60,7 @@ public class AuthInterceptor implements HandlerInterceptor {
         Cookie[] cookies = request.getCookies();
 
         if (cookies == null) {
-            throw new MemberUnathorizationException("로그인이 필요합니다");
+            throw new MemberUnauthorizedException("로그인이 필요합니다");
         }
 
         String token = Arrays.stream(cookies)
@@ -64,7 +70,7 @@ public class AuthInterceptor implements HandlerInterceptor {
                 .orElse(null);
 
         if(token == null) {
-            throw new MemberUnathorizationException("토큰이 존재하지 않습니다");
+            throw new MemberUnauthorizedException("토큰이 존재하지 않습니다");
         }
 
         try {
@@ -72,7 +78,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             request.setAttribute("memberPk", Long.parseLong(memberPk));
             return true;
         } catch (Exception e) {
-            throw new MemberUnathorizationException("유효하지 않은 토큰입니다.");
+            throw new MemberUnauthorizedException("유효하지 않은 토큰입니다.");
         }
     }
 

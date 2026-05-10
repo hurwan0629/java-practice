@@ -2,7 +2,6 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.PostCreateRequest;
 import com.example.demo.dto.PostUpdateDto;
-import com.example.demo.mapper.PostMapper;
 import com.example.demo.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,7 +21,7 @@ public class PostController {
     public ResponseEntity<?> getMaxPageCount(
             @RequestParam(value="maxPostCount", defaultValue="10") Integer maxPostCount
     ) {
-        return ResponseEntity.ok(Map.of("maxPageCount", this.postService.calcMaxPageCountByMaxPostCount(maxPostCount)));
+        return ResponseEntity.ok(Map.of("maxPageCount", this.postService.getMaxPageCount(maxPostCount)));
     }
 
     @GetMapping("/{post_pk}")
@@ -31,7 +30,7 @@ public class PostController {
     ) {
         System.out.println("/post/"+ postPk);
 
-        return ResponseEntity.ok(this.postService.getPostService(postPk));
+        return ResponseEntity.ok(this.postService.getPost(postPk));
 
     }
 
@@ -41,7 +40,7 @@ public class PostController {
             @RequestParam(name="maxPostCount", defaultValue="10") int maxPostCount
     ) {
         Integer offset = (page-1) * maxPostCount;
-        return ResponseEntity.ok(this.postService.getAllPost(page, maxPostCount));
+        return ResponseEntity.ok(this.postService.getPosts(page, maxPostCount));
     }
 
     @PostMapping("")
@@ -61,7 +60,7 @@ public class PostController {
             @PathVariable("post_pk") Long postPk
     ) {
 
-        return ResponseEntity.ok(this.postService.setPostDeletedTrueByUserDeleteReqeust(postPk));
+        return ResponseEntity.ok(this.postService.setPostDeletedTrueByUserDeleteRequest(postPk));
     }
 
     @PatchMapping("/{post_pk}")
@@ -69,7 +68,7 @@ public class PostController {
             @PathVariable("post_pk") Long postPk,
             @RequestBody PostUpdateDto request
             ) {
-        return ResponseEntity.ok(this.postService.updatePostTitleAndPostContentByPk(postPk, request));
+        return ResponseEntity.ok(this.postService.updatePost(postPk, request));
     }
 
 

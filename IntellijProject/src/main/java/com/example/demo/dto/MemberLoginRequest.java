@@ -1,5 +1,6 @@
 package com.example.demo.dto;
 
+// `/member/login`할때 받기위한 것
 public class MemberLoginRequest {
     private String memberId;
     private String memberPassword;

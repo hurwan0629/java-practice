@@ -43,7 +43,7 @@ public class MemberService {
     // 3-1. jwt토큰 생성 -> Reseponse에 추가
     // 3-2. 응답 데이터 추가
     
-    public MemberLoginResponse tryMemberLogin(String memberId, String memberPassword) {
+    public MemberLoginResponse login(String memberId, String memberPassword) {
         MemberLoginResponse result = new MemberLoginResponse();
 
         Long memberCount = memberMapper.checkMemberUniqueWithId(memberId);
@@ -75,7 +75,7 @@ public class MemberService {
     // register
     // 비밀번호 인코딩
     //
-    public int memberRegister(MemberRegisterRequest request) {
+    public int register(MemberRegisterRequest request) {
         Long memberCount = memberMapper.checkMemberUniqueWithId(request.getMemberId());
         if(memberCount == 0) {
             Member member = new Member();

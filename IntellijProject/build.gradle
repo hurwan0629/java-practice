@@ -38,6 +38,9 @@ dependencies {
 	// Java와 PostgreSQL에 연결할 수 있게 해주는 JDBC 드라이버
 	runtimeOnly 'org.postgresql:postgresql'
 
+	// 2026-05-10 기준 api문서 제작을 위해 Swagger 사용
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
+
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 

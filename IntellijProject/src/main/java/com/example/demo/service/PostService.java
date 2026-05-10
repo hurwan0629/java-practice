@@ -19,7 +19,7 @@ public class PostService {
 
     // max-page는 계산이 좀 있기때문에 빼보기.
     // maxPostCount (Integer로 받아서 Long를 반환함)
-    public Long calcMaxPageCountByMaxPostCount(Integer maxPostCount) {
+    public Long getMaxPageCount(Integer maxPostCount) {
         if(maxPostCount <= 0) {
             throw new BadRequestParamException("maxPostCount는 1 이상이여야합니다.");
         }
@@ -27,7 +27,7 @@ public class PostService {
     }
 
     // getPostByPostPk
-    public PostViewResponse getPostService(Long postPk) {
+    public PostViewResponse getPost(Long postPk) {
         PostViewResponse result = this.postMapper.getPostByPk(postPk);
         if(result == null) {
             throw new PostNotFoundException();
@@ -35,8 +35,8 @@ public class PostService {
         return result;
     }
 
-    // getAllPost
-    public List<PostBoardResponse> getAllPost(int page, int maxPostCount) {
+    // getPosts
+    public List<PostBoardResponse> getPosts(int page, int maxPostCount) {
         if(page <=0 || maxPostCount <=0 ){
             throw new BadRequestParamException("page와 maxPostCount는 1 이상이여야합니다.");
         }
@@ -64,7 +64,7 @@ public class PostService {
         return this.postMapper.createPost(request);
     }
 
-    public PostDeleteResponse setPostDeletedTrueByUserDeleteReqeust(Long postPk) {
+    public PostDeleteResponse setPostDeletedTrueByUserDeleteRequest(Long postPk) {
         Integer count = this.postMapper.checkPostByPk(postPk);
 
         if(count <= 0) {
@@ -75,7 +75,7 @@ public class PostService {
     }
 
     // updatePost
-    public PostUpdateDto updatePostTitleAndPostContentByPk(
+    public PostUpdateDto updatePost(
             Long postPk,
             PostUpdateDto request) {
         if(postMapper.checkPostByPk(postPk) <= 0) {

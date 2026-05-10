@@ -45,13 +45,52 @@
 ---
 # 진행도
 ## 2026-05-10
-### 한것
+### 한것 (15:30)
 개발보다는 Controller에 있는 복잡하거나 확장 가능성 있는 로직들을 모두 MemberService, PostService로 옮겼으며 Jwt나 Password를 toString로 출력하게 하던것을 삭제하였으며 jwt는 jwtExist를 통해 존재하는지만 확인하였음
 401, 403, 409, 400 등에 대한 에러 추가하였음.
 @RequestParam에러 page, count, pk 등을 받을 때 String로 받던걸 자동 파싱 개념을 알고 그냥 Long, Integer, int로 받았음.
 ### Todo
-- 현재 집(데스크탑) 카페(노트북)으로 개발중 오늘은 노트북으로 했는데 Intellij나 기타 개발시에 단축키 등에 대한 불편함이 조금 있었다. 해결이 필요함.
-- Validation을 도입하는 것을 고려해야겠다.
+- [x] 현재 집(데스크탑) 카페(노트북)으로 개발중 오늘은 노트북으로 했는데 Intellij나 기타 개발시에 단축키 등에 대한 불편함이 조금 있었다. 해결이 필요함.
+- [x] alidation을 도입하는 것을 고려해야겠다.
 - Spring Security를 도입하고싶은데 아직은 그정도의 규모는 잡힌것인지 의문이다.
-- dto, service 등의 네이밍 규칙이 슬슬 필요해지는거같다.
-- AuthInterceptor과 WebMvcCorsConfig.addInterceptors 에서 url검사 역할 분리가 필요하다.
+- [x] dto, service 등의 네이밍 규칙이 슬슬 필요해지는거같다.
+- [x] AuthInterceptor과 WebMvcCorsConfig.addInterceptors 에서 url검사 역할 분리가 필요하다.
+### 19:00
+- 창 우클릭하면 `Pin Tab` 라는 기능하고 `File Properties > Make File ReadOnly`가 존재하는 것을 알 수 있었다. 이제 오른쪽은 대체로 보면서 왼쪽 창에서 작업할 예정이다.
+- 일단 네이밍 규칙같은 경우에는 점진적으로 해결할 생각이다. 클래스 명같은 경우에는 좀 둘러볼 예정이다.
+  - `config/`: 나쁘지 않아서 패스
+  - `controller/`: 이것도 여지없이 패스
+  - `domain/`: 동일
+  - `dto/`: 이건 좀 유심히 봐야할듯
+    - `MemberAuthInfo`: 로그인 시 id/pw 확인용
+    - `MemberInfoResponse`: // 현재에는 `/member/me`에 대한 요청에 응답하기 위해 만들어진 dto
+    - `MemberLoginRequest`: 유지
+    - `MemberLoginResponse`: 유지
+    - `MemberRegisterRequest`: 유지 (응답은 그냥 memberPk만 이루어지기 때문에`MemberRegisterResponse`는 없음)
+    - `PostBoardResponse`: `/post/all`에 사용됨 (Request는 `/{var}` 로 해결되어서 없음)
+    - `PostCreateRequest`: 유지
+    - `PostDeleteResponse`: 2개 이상 전달하기 위한 DTO
+    - `PostUpdateDto`: 이게 잘 저장되었는지 보여주기 위해서 Requset/Response 모두에 쓰였었는데 본질은 Request이니까 Request로 변경
+    - `PostViewResponse`: 1개 선택 시 사용. Detail 페이지
+  - `exception/`: 패스
+  - `interceptor/`: 패스
+  - `mapper/`: 패스
+  - `service/`: 패스
+- 이후에 메서드 명도 좀 고쳤다. 구체적으로 쓰려했는데 좀 보기 불편해서.
+  - getPostService -> getPost
+  - PostService.calcMaxPageCountByMaxPostCount -> getMaxPageCount
+  - PostService.getPostService -> getPost
+  - PostService.getAllPost -> getPosts
+  - PostService.setPostDeletedTrueByUserDeleteReqeust -> setPostDeletedTrueByUserDeleteRequest
+  - PostService.updatePostTitleAndPostContentByPk -> updatePost
+  - MemberService.tryMemberLogin -> login
+  - MemberService.memberRegister -> register
+  - MemberService.calcMaxPageCountByMaxPostCount -> getMaxPageCount
+- addInterceptors와 AuthInterceptor에서 겹치는 url 역할이 있어서 그냥 전부다 AuthInterceptor에 위임하였다.
+- 
+### Todo
+- Security 써보기
+- 권한/인가 구조 정리
+- 요청 DDos Dos 등에 대해서 방안 찾아보기
+- 테스트 정리해보기
+- 그리고 확장해보기
