@@ -1,4 +1,7 @@
-# 스프링 공부용 프로젝트 
+# 스프링 공부용 프로젝트
+- 3.5.14
+- gradle
+- Java17
 ## 사용중인 의존성
 - spring-boot-starter: 스프링 컨테이너 사용, 자동 설정 기반 등을 위해 사용
 - spring-boot-starter-web: 기본 RestController과 Mapping 어노테이션을 이용하기 위해
@@ -38,4 +41,17 @@
 - 
 ### 인증/인가 설정
 - interceptor/AuthInterceptor 에서 요청 uri를 뜯어보아 인증이 필요할 경우 쿠키를 전부 뜯으면서 첫번째 값을 탐색 -> 존재해야 true + memberPk를 Long로 치환하여 request.setAttribute를 해준다.
-- 
+
+---
+# 진행도
+## 2026-05-10
+### 한것
+개발보다는 Controller에 있는 복잡하거나 확장 가능성 있는 로직들을 모두 MemberService, PostService로 옮겼으며 Jwt나 Password를 toString로 출력하게 하던것을 삭제하였으며 jwt는 jwtExist를 통해 존재하는지만 확인하였음
+401, 403, 409, 400 등에 대한 에러 추가하였음.
+@RequestParam에러 page, count, pk 등을 받을 때 String로 받던걸 자동 파싱 개념을 알고 그냥 Long, Integer, int로 받았음.
+### Todo
+- 현재 집(데스크탑) 카페(노트북)으로 개발중 오늘은 노트북으로 했는데 Intellij나 기타 개발시에 단축키 등에 대한 불편함이 조금 있었다. 해결이 필요함.
+- Validation을 도입하는 것을 고려해야겠다.
+- Spring Security를 도입하고싶은데 아직은 그정도의 규모는 잡힌것인지 의문이다.
+- dto, service 등의 네이밍 규칙이 슬슬 필요해지는거같다.
+- AuthInterceptor과 WebMvcCorsConfig.addInterceptors 에서 url검사 역할 분리가 필요하다.

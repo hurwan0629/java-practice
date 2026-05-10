@@ -1,5 +1,7 @@
 package com.example.demo.interceptor;
 
+import com.example.demo.exception.ForbiddenRequestException;
+import com.example.demo.exception.MemberUnathorizationException;
 import com.example.demo.service.JwtService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,8 +19,12 @@ public class AuthInterceptor implements HandlerInterceptor {
     private final String[] passing ={
             "GET /post/max-page",
             "GET /post/{var}",
-            "DELETE /post/{var}",
+            "GET /post/all",
             "OPTIONS /post/{var}"
+    };
+
+    private final String[] forbidden = {
+            "GET /member/{var}"
     };
 
     @Autowired
@@ -38,15 +44,17 @@ public class AuthInterceptor implements HandlerInterceptor {
 
         System.out.println(request.getMethod() + uri);
 
-        if (isPassingRequest(request.getMethod(), uri)) {
+        if (isRequestIncludedIn(this.passing, request.getMethod(), uri)) {
             return true;
+        }
+        if (isRequestIncludedIn(this.forbidden, request.getMethod(), uri)) {
+            throw new ForbiddenRequestException();
         }
 
         Cookie[] cookies = request.getCookies();
 
         if (cookies == null) {
-            unauthorized(response, "로그인이 필요합니다");
-            return false;
+            throw new MemberUnathorizationException("로그인이 필요합니다");
         }
 
         String token = Arrays.stream(cookies)
@@ -56,8 +64,7 @@ public class AuthInterceptor implements HandlerInterceptor {
                 .orElse(null);
 
         if(token == null) {
-            unauthorized(response, "토큰이 존재하지 않습니다");
-            return false;
+            throw new MemberUnathorizationException("토큰이 존재하지 않습니다");
         }
 
         try {
@@ -65,21 +72,16 @@ public class AuthInterceptor implements HandlerInterceptor {
             request.setAttribute("memberPk", Long.parseLong(memberPk));
             return true;
         } catch (Exception e) {
-            unauthorized(response, "유효하지 않은 토큰입니다.");
-            return false;
+            throw new MemberUnathorizationException("유효하지 않은 토큰입니다.");
         }
     }
 
-    private void unauthorized(HttpServletResponse response, String message) throws IOException {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        response.getWriter().write("{\"message\":\"" + message + "\"}");
-    }
-
-    private boolean isPassingRequest(String requestMethod, String requestUri) {
-        for (String passUrl: passing) {
-            String[] parts = passUrl.split(" ", 2);
+    private boolean isRequestIncludedIn(
+            String[] targets,
+            String requestMethod,
+            String requestUri) {
+        for (String targetUrl: targets) {
+            String[] parts = targetUrl.split(" ", 2);
 
             if (parts.length != 2) {
                 continue;

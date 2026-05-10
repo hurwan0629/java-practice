@@ -1,13 +1,9 @@
 package com.example.demo.controller;
 
 import com.example.demo.domain.Member;
-import com.example.demo.dto.MemberAuthInfo;
-import com.example.demo.dto.MemberInfoResponse;
-import com.example.demo.dto.MemberLoginRequest;
-import com.example.demo.dto.MemberRegisterRequest;
-import com.example.demo.exception.LoginFailedException;
+import com.example.demo.dto.*;
 import com.example.demo.mapper.MemberMapper;
-import com.example.demo.service.JwtService;
+import com.example.demo.service.MemberService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,7 +30,7 @@ public class MemberController {
     @Autowired
     private PasswordEncoder passwordEncoder;
     @Autowired
-    private JwtService jwtService;
+    private MemberService memberService;
 
     @Value("${app.cookie.secure}")
     private boolean cookieSecure;
@@ -62,36 +58,26 @@ public class MemberController {
             HttpServletResponse servletResponse
         ) {
         System.out.println(request);
-        Long memberCount = memberMapper.checkMemberUniqueWithId(request.getMemberId());
-        System.out.println(memberCount);
-        if(memberCount == 0) {
-            throw new LoginFailedException("아이디가 잘못되었습니다.");
-        }
-        else if(memberCount == 1) {
-            MemberAuthInfo memberAuthInfo = memberMapper.getMemberNameAndPasswordHashById(request.getMemberId());
-            System.out.println(memberAuthInfo);
-            if(!passwordEncoder.matches(request.getMemberPassword(), memberAuthInfo.getMemberPasswordHash())) {
-                throw new LoginFailedException("비밀번호가 잘못되었습니다.");
-            }
-            // API 토큰 생성 후 Cookie로 빌드
-            String token = jwtService.createToken(memberAuthInfo.getMemberPk());
-            ResponseCookie jwtCookie = ResponseCookie.from("token", token)
-                    .httpOnly(true)
-                    .sameSite(this.cookieSameSite)
-                    .secure(this.cookieSecure)
-                    .path("/")
-                    .maxAge(60*60)
-                    .build();
+        MemberLoginResponse result
+                = memberService.tryMemberLogin(
+                        request.getMemberId(),
+                        request.getMemberPassword());
 
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
-                    .body(Map.of(
-                            "memberName", memberAuthInfo.getMemberName(),
-                            "memberPk", memberAuthInfo.getMemberPk()));
-        }
-        else {
-            throw new LoginFailedException("아이디가 2개 이상 존재합니다.");
-        }
+        ResponseCookie cookie = ResponseCookie
+                .from("token", result.getJwtToken())
+                .httpOnly(true)
+                .sameSite(this.cookieSameSite)
+                .secure(this.cookieSecure)
+                .path("/")
+                .maxAge(60*60)
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(Map.of(
+                        "memberName", result.getMemberName(),
+                        "memberPk", result.getMemberPk())
+                );
     }
 
     @PostMapping("/logout")
@@ -110,19 +96,12 @@ public class MemberController {
 
     @PostMapping("/register")
     public ResponseEntity<Map<String, Integer>> memberRegister(
-            @RequestBody MemberRegisterRequest request,
-            Member member) {
+            @RequestBody MemberRegisterRequest request) {
 //        System.out.println(request);
-        String encodedPassword = passwordEncoder.encode(request.getMemberPassword());
-
-        member.setMemberName(request.getMemberName());
-        member.setMemberId(request.getMemberId());
-        member.setMemberPasswordHash(encodedPassword);
-        member.setMemberEmail(request.getMemberEmail());
-
 //        System.out.println(member);
 
-        return ResponseEntity.ok(Map.of("memberPk", memberMapper.insert(member)));
+        return ResponseEntity.ok(Map.of("memberPk", this.memberService.memberRegister(request
+        )));
     }
 
     @GetMapping("/me")

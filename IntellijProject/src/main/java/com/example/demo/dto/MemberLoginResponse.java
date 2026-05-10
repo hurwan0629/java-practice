@@ -1,15 +1,17 @@
 package com.example.demo.dto;
 
 public class MemberLoginResponse {
-    private String accessToken;
+    private Long memberPk;
     private String memberName;
+    private String jwtToken;
 
-    public String getAccessToken() {
-        return accessToken;
-    }
-
-    public void setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
+    @Override
+    public String toString() {
+        return "MemberLoginServiceDto{" +
+                "memberPk='" + memberPk + '\'' +
+                ", memberName='" + memberName + '\'' +
+                ", jwtTokenPresent='" + (jwtToken != null) + '\'' +
+                '}';
     }
 
     public String getMemberName() {
@@ -20,11 +22,19 @@ public class MemberLoginResponse {
         this.memberName = memberName;
     }
 
-    @Override
-    public String toString() {
-        return "MemberLoginResponse{" +
-                "accessToken='" + accessToken + '\'' +
-                ", memberName='" + memberName + '\'' +
-                '}';
+    public String getJwtToken() {
+        return jwtToken;
+    }
+
+    public void setJwtToken(String jwtToken) {
+        this.jwtToken = jwtToken;
+    }
+
+    public Long getMemberPk() {
+        return memberPk;
+    }
+
+    public void setMemberPk(Long memberPk) {
+        this.memberPk = memberPk;
     }
 }

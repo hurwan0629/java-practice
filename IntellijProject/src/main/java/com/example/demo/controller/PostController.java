@@ -2,9 +2,8 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.PostCreateRequest;
 import com.example.demo.dto.PostUpdateDto;
-import com.example.demo.dto.PostViewResponse;
-import com.example.demo.exception.PostNotFoundException;
 import com.example.demo.mapper.PostMapper;
+import com.example.demo.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,18 +16,13 @@ import java.util.Map;
 public class PostController {
 
     @Autowired
-    private PostMapper postMapper;
+    private PostService postService;
 
     @GetMapping("/max-page")
     public ResponseEntity<?> getMaxPageCount(
-            @RequestParam(value="maxPostCount") String stringMaxPostCount
+            @RequestParam(value="maxPostCount", defaultValue="10") Integer maxPostCount
     ) {
-        Integer maxPostCount = Integer.parseInt(stringMaxPostCount);
-        if(maxPostCount == null || maxPostCount <= 0) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-        Long maxPageCount = postMapper.getMaxPageCount(maxPostCount);
-        return ResponseEntity.ok(Map.of("maxPageCount", maxPageCount));
+        return ResponseEntity.ok(Map.of("maxPageCount", this.postService.calcMaxPageCountByMaxPostCount(maxPostCount)));
     }
 
     @GetMapping("/{post_pk}")
@@ -37,25 +31,17 @@ public class PostController {
     ) {
         System.out.println("/post/"+ postPk);
 
-        PostViewResponse response = postMapper.getPostByPk(postPk);
-
-        if(response == null) {
-            throw new PostNotFoundException();
-        }
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(this.postService.getPostService(postPk));
 
     }
 
     @GetMapping("/all")
     public ResponseEntity<?> getAllPosts(
-            @RequestParam(name="page", defaultValue="1") String stringPage,
-            @RequestParam(name="maxPostCount", defaultValue="10") String stringMaxPostCount
+            @RequestParam(name="page", defaultValue="1") int page,
+            @RequestParam(name="maxPostCount", defaultValue="10") int maxPostCount
     ) {
-        Integer page = Integer.parseInt(stringPage);
-        Integer maxPostCount = Integer.parseInt(stringMaxPostCount);
         Integer offset = (page-1) * maxPostCount;
-        return ResponseEntity.ok(postMapper.getPostAll(offset, maxPostCount));
+        return ResponseEntity.ok(this.postService.getAllPost(page, maxPostCount));
     }
 
     @PostMapping("")
@@ -63,27 +49,19 @@ public class PostController {
             @RequestBody PostCreateRequest request,
             @RequestAttribute("memberPk") Long memberPk
     ) {
-        request.setMemberPk(memberPk);
-        this.postMapper.createPost(request);
-
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(Map.of(
                         "message", "게시글이 생성되었습니다",
-                        "postPk", request.getPostPk()));
+                        "postPk", this.postService.createPost(request, memberPk)));
     }
 
     @DeleteMapping("/{post_pk}")
     public ResponseEntity<?> deletePost(
             @PathVariable("post_pk") Long postPk
     ) {
-        Integer count = postMapper.checkPostByPk(postPk);
 
-        if(count <= 0) {
-            throw new PostNotFoundException();
-        }
-
-        return ResponseEntity.ok(this.postMapper.deletePostByPk(postPk));
+        return ResponseEntity.ok(this.postService.setPostDeletedTrueByUserDeleteReqeust(postPk));
     }
 
     @PatchMapping("/{post_pk}")
@@ -91,11 +69,8 @@ public class PostController {
             @PathVariable("post_pk") Long postPk,
             @RequestBody PostUpdateDto request
             ) {
-        if(postMapper.checkPostByPk(postPk) <= 0) {
-            throw new PostNotFoundException();
-        }
-        request.setPostPk(postPk);
-        return ResponseEntity.ok(this.postMapper.updatePostTitleAndPostContentByPk(request));
+        return ResponseEntity.ok(this.postService.updatePostTitleAndPostContentByPk(postPk, request));
     }
+
 
 }
