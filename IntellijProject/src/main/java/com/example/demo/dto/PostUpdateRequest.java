@@ -1,9 +1,18 @@
 package com.example.demo.dto;
 
-public class PostUpdateDto {
+public class PostUpdateRequest {
     private Long postPk;
     private String postTitle;
     private String postContent;
+    private Long memberPk;
+
+    public Long getMemberPk() {
+        return memberPk;
+    }
+
+    public void setMemberPk(Long memberPk) {
+        this.memberPk = memberPk;
+    }
 
     public Long getPostPk() {
         return postPk;
@@ -31,10 +40,11 @@ public class PostUpdateDto {
 
     @Override
     public String toString() {
-        return "PostUpdateDto{" +
+        return "PostUpdateRequest{" +
                 "postPk=" + postPk +
                 ", postTitle='" + postTitle + '\'' +
                 ", postContent='" + postContent + '\'' +
+                ", memberPk=" + memberPk +
                 '}';
     }
 }

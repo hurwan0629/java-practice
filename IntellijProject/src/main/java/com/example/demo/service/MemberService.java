@@ -4,13 +4,15 @@ import com.example.demo.domain.Member;
 import com.example.demo.dto.MemberAuthInfo;
 import com.example.demo.dto.MemberLoginResponse;
 import com.example.demo.dto.MemberRegisterRequest;
-import com.example.demo.exception.IdConflictException;
-import com.example.demo.exception.LoginFailedException;
+import com.example.demo.exception.BusinessException;
+import com.example.demo.exception.ErrorCode;
 import com.example.demo.mapper.MemberMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 
 /**
  * MemberController중에서 좀 더 유지보수, 등을 할만한 로직들을 이곳으로 옮기겠습니다.
@@ -48,7 +50,11 @@ public class MemberService {
 
         Long memberCount = memberMapper.checkMemberUniqueWithId(memberId);
         if(memberCount == 0) {
-            throw new LoginFailedException("아이디가 잘못되었습니다.");
+            throw new BusinessException(ErrorCode.LOGIN_FAILED, Map.of(
+                    "resource", "memberId",
+                    "action", "select",
+                    "reason", "아이디가 잘못되었습니다."
+            ));
         }
         else if(memberCount == 1) {
             MemberAuthInfo memberAuthInfo = memberMapper.getMemberNameAndPasswordHashById(memberId);
@@ -57,7 +63,11 @@ public class MemberService {
 
             System.out.println(memberAuthInfo);
             if(!passwordEncoder.matches(memberPassword, memberAuthInfo.getMemberPasswordHash())) {
-                throw new LoginFailedException("비밀번호가 잘못되었습니다.");
+                throw new BusinessException(ErrorCode.LOGIN_FAILED, Map.of(
+                        "resource", "memberPassword",
+                        "action", "select",
+                        "reason", "비밀번호가 잘못되었습니다."
+                ));
             }
             // API 토큰 생성 후 Cookie로 빌드
             String token = jwtService.createToken(memberAuthInfo.getMemberPk());
@@ -66,7 +76,11 @@ public class MemberService {
             return result;
         }
         else {
-            throw new IdConflictException("아이디가 2개 이상 존재합니다.");
+            throw new BusinessException(ErrorCode.ID_CONFLICT, Map.of(
+                    "resource", "memberId",
+                    "action", "select",
+                    "reason", "아이디가 중복 되었습니다."
+            ));
         }
     }
     
@@ -87,7 +101,11 @@ public class MemberService {
             return memberMapper.insert(member);
 
         } else {
-            throw new IdConflictException("이미 존재하는 아이디입니다. 다른 아이디를 시도해주세요");
+            throw new BusinessException(ErrorCode.ID_CONFLICT, Map.of(
+                    "resource", "memberId",
+                    "action", "select",
+                    "reason", "이미 존재하는 아이디입니다. 다른 아이디를 시도해주세요"
+            ));
         }
     }
 }

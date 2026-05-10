@@ -1,6 +1,6 @@
-package com.example.demo.exception;
+package com.example.demo.exception.legacy;
 
-public class MemberUnauthorizedException extends RuntimeException{
+class MemberUnauthorizedException extends RuntimeException{
     public MemberUnauthorizedException() {
         super("해당 기능을 사용할 권한이 없습니다.");
     }

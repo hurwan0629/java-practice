@@ -1,7 +1,7 @@
 package com.example.demo.interceptor;
 
-import com.example.demo.exception.ForbiddenRequestException;
-import com.example.demo.exception.MemberUnauthorizedException;
+import com.example.demo.exception.BusinessException;
+import com.example.demo.exception.ErrorCode;
 import com.example.demo.service.JwtService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.util.Arrays;
+import java.util.Map;
 
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
@@ -54,13 +55,21 @@ public class AuthInterceptor implements HandlerInterceptor {
             return true;
         }
         if (isRequestIncludedIn(this.forbidden, request.getMethod(), uri)) {
-            throw new ForbiddenRequestException();
+            throw new BusinessException(ErrorCode.FORBIDDEN_REQUEST, Map.of(
+                    "resource", "HTTP_REQUEST",
+                    "action", "auth",
+                    "reason", "인증이 필요한 작업입니다."
+            ));
         }
 
         Cookie[] cookies = request.getCookies();
 
         if (cookies == null) {
-            throw new MemberUnauthorizedException("로그인이 필요합니다");
+            throw new BusinessException(ErrorCode.AUTHORIZATION_REQUIRED, Map.of(
+                    "resource", "HTTP_REQUEST",
+                    "action", "auth",
+                    "reason", "인증이 필요한 작업입니다."
+            ));
         }
 
         String token = Arrays.stream(cookies)
@@ -70,7 +79,11 @@ public class AuthInterceptor implements HandlerInterceptor {
                 .orElse(null);
 
         if(token == null) {
-            throw new MemberUnauthorizedException("토큰이 존재하지 않습니다");
+            throw new BusinessException(ErrorCode.AUTHORIZATION_REQUIRED, Map.of(
+                    "resource", "HTTP_REQUEST",
+                    "action", "auth",
+                    "reason", "인증이 필요한 작업입니다."
+            ));
         }
 
         try {
@@ -78,7 +91,11 @@ public class AuthInterceptor implements HandlerInterceptor {
             request.setAttribute("memberPk", Long.parseLong(memberPk));
             return true;
         } catch (Exception e) {
-            throw new MemberUnauthorizedException("유효하지 않은 토큰입니다.");
+            throw new BusinessException(ErrorCode.FORBIDDEN_REQUEST, Map.of(
+                    "resource", "JwtToken",
+                    "action", "token",
+                    "reason", "유효하지 않은 토큰입니다."
+            ));
         }
     }
 

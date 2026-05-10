@@ -1,6 +1,6 @@
-package com.example.demo.exception;
+package com.example.demo.exception.legacy;
 
-public class BadRequestParamException extends RuntimeException {
+class BadRequestParamException extends RuntimeException {
     public BadRequestParamException() {
         super("잘못된 형태의 요청입니다. 파라미터를 확인해주세요");
     }

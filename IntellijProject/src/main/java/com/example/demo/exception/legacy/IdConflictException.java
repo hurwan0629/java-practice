@@ -1,6 +1,6 @@
-package com.example.demo.exception;
+package com.example.demo.exception.legacy;
 
-public class IdConflictException extends RuntimeException {
+class IdConflictException extends RuntimeException {
     public IdConflictException() {
         super("아이디가 중복되었습니다");
     }

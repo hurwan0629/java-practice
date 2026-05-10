@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.PostCreateRequest;
-import com.example.demo.dto.PostUpdateDto;
+import com.example.demo.dto.PostUpdateRequest;
 import com.example.demo.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -57,18 +57,20 @@ public class PostController {
 
     @DeleteMapping("/{post_pk}")
     public ResponseEntity<?> deletePost(
-            @PathVariable("post_pk") Long postPk
+            @PathVariable("post_pk") Long postPk,
+            @RequestAttribute("memberPk") Long memberPk
     ) {
 
-        return ResponseEntity.ok(this.postService.setPostDeletedTrueByUserDeleteRequest(postPk));
+        return ResponseEntity.ok(this.postService.setPostDeletedTrueByUserDeleteRequest(postPk, memberPk));
     }
 
     @PatchMapping("/{post_pk}")
     public ResponseEntity<?> updatePost(
             @PathVariable("post_pk") Long postPk,
-            @RequestBody PostUpdateDto request
+            @RequestBody PostUpdateRequest request,
+            @RequestAttribute("memberPk") Long memberPk
             ) {
-        return ResponseEntity.ok(this.postService.updatePost(postPk, request));
+        return ResponseEntity.ok(this.postService.updatePost(postPk, request, memberPk));
     }
 
 

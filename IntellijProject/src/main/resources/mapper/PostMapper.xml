@@ -20,6 +20,13 @@
         WHERE post_pk = #{postPk} AND post_deleted = false
     </select>
 
+    <select id="checkPostByPostPkAndMemberPk"
+            resultType="Integer">
+        SELECT COUNT(*)
+        FROM post
+        WHERE post_pk = #{postPk} AND writer_pk = #{memberPk}
+    </select>
+
     <insert id="createPost"
             parameterType="com.example.demo.dto.PostCreateRequest"
             useGeneratedKeys="true"

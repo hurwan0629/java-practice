@@ -94,3 +94,15 @@
 - 요청 DDos Dos 등에 대해서 방안 찾아보기
 - 테스트 정리해보기
 - 그리고 확장해보기
+- 예외/응답 구조 통일하기
+
+## 2026-05-11
+### 06:29
+- post 수정/삭제에서 본인인지 확인하는 제대로된 코드가 없었어서 RequestAttribute("memberPk") 를 이용하여 확인하는 절차를 가짐 (checkPostByPostPkAndMemberPk)
+### 07:51
+- 응답 구조가 일관적이지 않은게 조금 신경쓰여서 리팩토링.
+  1. dto.ApiResponse: [success, data, error]으로 이루어진 DTO. success(data), fail(error) 으로 이루어진 메서드를 통해 객체 생성 가능
+  2. dto.ErrorResponse: [code, status, message, detail(or null)]로 이루어진 에러 응답 전용 에러 ApiResponse 제작에 쓰기 위해 만들어진 dto
+  3. ErrorCode: Error[code, status, message]를 넣기위해 만들어진 Enum
+  4. BusinessException: 기존의 모든 사용자 정의 예외(UDE)를 대체하기 위해 만든 예외 핸들러
+  5. 이후 모든 `throw new ...`를 `BusinessException`으로 변경함. 일반 응답도 바꿔야하는데 아직은 못함.

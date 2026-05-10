@@ -11,6 +11,10 @@ public interface PostMapper {
 
     PostViewResponse getPostByPk(Long postPk);
 
+    Integer checkPostByPostPkAndMemberPk(
+            @Param("postPk") Long postPk,
+            @Param("memberPk") Long memberPk);
+
     Long createPost(PostCreateRequest request);
 
     Long getMaxPageCount(Integer maxPostCount);
@@ -23,6 +27,6 @@ public interface PostMapper {
 
     PostDeleteResponse deletePostByPk(@Param("postPk") Long postPk);
 
-    PostUpdateDto updatePostTitleAndPostContentByPk(
-            PostUpdateDto postUpdateDto);
+    PostUpdateRequest updatePostTitleAndPostContentByPk(
+            PostUpdateRequest postUpdateDto);
 }
