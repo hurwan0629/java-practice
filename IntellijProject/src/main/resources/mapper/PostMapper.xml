@@ -92,8 +92,8 @@
     </select >
 
     <select id="updatePostTitleAndPostContentByPk"
-            parameterType="com.example.demo.dto.PostUpdateDto"
-            resultType="com.example.demo.dto.PostUpdateDto">
+            parameterType="com.example.demo.dto.PostUpdateRequest"
+            resultType="com.example.demo.dto.PostUpdateRequest">
         UPDATE post
         SET post_title=#{postTitle},
             post_content=#{postContent},

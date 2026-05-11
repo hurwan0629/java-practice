@@ -1,13 +1,13 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.PostCreateRequest;
-import com.example.demo.dto.PostUpdateRequest;
+import com.example.demo.dto.*;
 import com.example.demo.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -18,59 +18,59 @@ public class PostController {
     private PostService postService;
 
     @GetMapping("/max-page")
-    public ResponseEntity<?> getMaxPageCount(
+    public ResponseEntity<ApiResponse<Map<String, Long>>> getMaxPageCount(
             @RequestParam(value="maxPostCount", defaultValue="10") Integer maxPostCount
     ) {
-        return ResponseEntity.ok(Map.of("maxPageCount", this.postService.getMaxPageCount(maxPostCount)));
+
+        return ResponseEntity.ok(ApiResponse.success(Map.of("maxPageCount", this.postService.getMaxPageCount(maxPostCount))));
     }
 
     @GetMapping("/{post_pk}")
-    public ResponseEntity<?> getPostByPk(
+    public ResponseEntity<ApiResponse<PostViewResponse>> getPostByPk(
             @PathVariable("post_pk") Long postPk
     ) {
         System.out.println("/post/"+ postPk);
 
-        return ResponseEntity.ok(this.postService.getPost(postPk));
+        return ResponseEntity.ok(ApiResponse.success(this.postService.getPost(postPk)));
 
     }
 
     @GetMapping("/all")
-    public ResponseEntity<?> getAllPosts(
+    public ResponseEntity<ApiResponse<List<PostBoardResponse>>> getAllPosts(
             @RequestParam(name="page", defaultValue="1") int page,
             @RequestParam(name="maxPostCount", defaultValue="10") int maxPostCount
     ) {
-        Integer offset = (page-1) * maxPostCount;
-        return ResponseEntity.ok(this.postService.getPosts(page, maxPostCount));
+        return ResponseEntity.ok(ApiResponse.success(this.postService.getPosts(page, maxPostCount)));
     }
 
     @PostMapping("")
-    public ResponseEntity<?> createPost(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> createPost(
             @RequestBody PostCreateRequest request,
             @RequestAttribute("memberPk") Long memberPk
     ) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(Map.of(
+                .body(ApiResponse.success(Map.of(
                         "message", "게시글이 생성되었습니다",
-                        "postPk", this.postService.createPost(request, memberPk)));
+                        "postPk", this.postService.createPost(request, memberPk))));
     }
 
     @DeleteMapping("/{post_pk}")
-    public ResponseEntity<?> deletePost(
+    public ResponseEntity<ApiResponse<PostDeleteResponse>> deletePost(
             @PathVariable("post_pk") Long postPk,
             @RequestAttribute("memberPk") Long memberPk
     ) {
 
-        return ResponseEntity.ok(this.postService.setPostDeletedTrueByUserDeleteRequest(postPk, memberPk));
+        return ResponseEntity.ok(ApiResponse.success(this.postService.setPostDeletedTrueByUserDeleteRequest(postPk, memberPk)));
     }
 
     @PatchMapping("/{post_pk}")
-    public ResponseEntity<?> updatePost(
+    public ResponseEntity<ApiResponse<PostUpdateRequest>> updatePost(
             @PathVariable("post_pk") Long postPk,
             @RequestBody PostUpdateRequest request,
             @RequestAttribute("memberPk") Long memberPk
             ) {
-        return ResponseEntity.ok(this.postService.updatePost(postPk, request, memberPk));
+        return ResponseEntity.ok(ApiResponse.success(this.postService.updatePost(postPk, request, memberPk)));
     }
 
 

@@ -106,3 +106,6 @@
   3. ErrorCode: Error[code, status, message]를 넣기위해 만들어진 Enum
   4. BusinessException: 기존의 모든 사용자 정의 예외(UDE)를 대체하기 위해 만든 예외 핸들러
   5. 이후 모든 `throw new ...`를 `BusinessException`으로 변경함. 일반 응답도 바꿔야하는데 아직은 못함.
+
+### 10:42
+- 응답 구조도 싹다 ResponseEntity<ApiResponse<?>> 형태로 바꾸었음.

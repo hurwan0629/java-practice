@@ -4,13 +4,11 @@ import com.example.demo.domain.Member;
 import com.example.demo.dto.*;
 import com.example.demo.mapper.MemberMapper;
 import com.example.demo.service.MemberService;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,8 +26,6 @@ public class MemberController {
     @Autowired
     private MemberMapper memberMapper;
     @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
     private MemberService memberService;
 
     @Value("${app.cookie.secure}")
@@ -38,24 +34,23 @@ public class MemberController {
     private String cookieSameSite;
 
     @GetMapping
-    public List<Member> findAll() {
-        return memberMapper.findAll();
+    public ResponseEntity<ApiResponse<List<Member>>> findAll() {
+        return ResponseEntity.ok(ApiResponse.success(memberMapper.findAll()));
     }
 
     @GetMapping("/{pk}")
-    public Member findByPk(@PathVariable Long pk) {
-        return memberMapper.findByPk(pk);
+    public ResponseEntity<ApiResponse<Map<String, Member>>> findByPk(@PathVariable Long pk) {
+        return ResponseEntity.ok(ApiResponse.success(Map.of("member", memberMapper.findByPk(pk))));
     }
 
     @GetMapping("/check-id")
-    public ResponseEntity<Map<String, Boolean>> checkDuplicate(@RequestParam("memberId") String memberId) {
-        return ResponseEntity.ok(Map.of("duplicated", memberMapper.findById(memberId)>0));
+    public ResponseEntity<ApiResponse<Map<String, Boolean>>> checkDuplicate(@RequestParam("memberId") String memberId) {
+        return ResponseEntity.ok(ApiResponse.success(Map.of("duplicated", memberMapper.findById(memberId)>0)));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(
-            @RequestBody MemberLoginRequest request,
-            HttpServletResponse servletResponse
+    public ResponseEntity<ApiResponse<Map<String, Object>>> login(
+            @RequestBody MemberLoginRequest request
         ) {
         System.out.println(request);
         MemberLoginResponse result
@@ -74,14 +69,14 @@ public class MemberController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .body(Map.of(
+                .body(ApiResponse.success(Map.of(
                         "memberName", result.getMemberName(),
                         "memberPk", result.getMemberPk())
-                );
+                ));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
+    public ResponseEntity<ApiResponse<Map<String, String>>> logout() {
         ResponseCookie deleteJwtCookie = ResponseCookie.from("token", "")
                 .httpOnly(true)
                 .secure(cookieSecure)
@@ -91,24 +86,24 @@ public class MemberController {
                 .build();
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, deleteJwtCookie.toString())
-                .body(Map.of("message", "로그아웃 되었습니다"));
+                .body(ApiResponse.success(Map.of("message", "로그아웃 되었습니다")));
     }
 
     @PostMapping("/register")
-    public ResponseEntity<Map<String, Integer>> memberRegister(
+    public ResponseEntity<ApiResponse<Map<String, Integer>>> memberRegister(
             @RequestBody MemberRegisterRequest request) {
 //        System.out.println(request);
 //        System.out.println(member);
 
-        return ResponseEntity.ok(Map.of("memberPk", this.memberService.register(request
-        )));
+        return ResponseEntity.ok(ApiResponse.success(Map.of("memberPk", this.memberService.register(request
+        ))));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<MemberInfoResponse> memberInfo(
+    public ResponseEntity<ApiResponse<MemberInfoResponse>> memberInfo(
             @RequestAttribute("memberPk") Long memberPk
     ) {
 
-        return ResponseEntity.ok(memberMapper.getMemberInfoByPk(memberPk));
+        return ResponseEntity.ok(ApiResponse.success(memberMapper.getMemberInfoByPk(memberPk)));
     }
 }

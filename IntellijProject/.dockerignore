@@ -1,0 +1,9 @@
+.git
+.gitignore
+.gradle
+.idea
+.vscode
+build
+out
+docker/postgres_data
+*.env*

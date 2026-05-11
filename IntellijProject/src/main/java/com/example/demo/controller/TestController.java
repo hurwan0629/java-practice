@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.mapper.TestMapper;
 import com.example.demo.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,8 @@ public class TestController {
 
     @Autowired
     private JwtService jwtService;
+    @Autowired
+    private TestMapper testMapper;
 
     public static AtomicInteger a= new AtomicInteger(0);
 
@@ -21,12 +24,20 @@ public class TestController {
         int current = a.getAndIncrement();
         System.out.println(current);
 
-        try{
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        // try{
+        //     Thread.sleep(1000);
+        // } catch (InterruptedException e) {
+        //     throw new RuntimeException(e);
+        // }
+        boolean dbConnected = false;
+        try {
+            dbConnected = this.testMapper.checkConnection();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
-        return ResponseEntity.ok(Map.of("message", "hello"));
+
+        return ResponseEntity.ok(Map.of("message", "hello",
+                "dbConnection", dbConnected));
     }
 
     @PostMapping("/login")

@@ -28,5 +28,5 @@ public interface PostMapper {
     PostDeleteResponse deletePostByPk(@Param("postPk") Long postPk);
 
     PostUpdateRequest updatePostTitleAndPostContentByPk(
-            PostUpdateRequest postUpdateDto);
+            PostUpdateRequest postUpdateRequest);
 }
