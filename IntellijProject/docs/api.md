@@ -1,6 +1,6 @@
 # API 문서
 
-기준 코드: Spring MVC Controller, DTO, Service, `GlobalExceptionHandler`, `AuthInterceptor`
+기준 코드: Spring MVC Controller, DTO, Service, `exception/`, `GlobalExceptionHandler`, `AuthInterceptor`
 
 ## 공통
 
@@ -12,70 +12,19 @@ Base URL은 [application.properties](../src/main/resources/application.propertie
 app.api.base-url=http://localhost:8080
 ```
 
-### 인증 방식
+### 응답 래퍼
 
-로그인 성공 시 서버가 `Set-Cookie` 헤더로 JWT 쿠키를 내려준다.
-
-```http
-Set-Cookie: token={jwt}; HttpOnly; Path=/; Max-Age=3600; SameSite={app.cookie.same-site}; Secure={app.cookie.secure}
-```
-
-`AuthInterceptor.passing`에 포함된 API와 `OPTIONS` 요청은 인증 없이 통과한다.  
-`AuthInterceptor.forbidden`에 포함된 API는 403으로 차단한다.  
-그 외 모든 API는 `token` 쿠키 검사를 통과해야 한다.
-
-### 인증 없이 접근 가능한 API
-
-```text
-POST /member/login
-POST /member/register
-GET  /member/check-id
-GET  /post/max-page
-GET  /post/{post_pk}
-GET  /post/all
-GET  /test
-OPTIONS *
-```
-
-### 강제 차단 API
-
-```text
-GET /member/{pk}
-```
-
-### 인증 필요한 API
-
-`passing`, `forbidden`, `OPTIONS`에 해당하지 않는 모든 API.
-
-대표적으로:
-
-```text
-GET    /member
-POST   /member/logout
-GET    /member/me
-POST   /post
-PATCH  /post/{post_pk}
-DELETE /post/{post_pk}
-GET    /check
-POST   /login
-```
-
-### 성공 응답
-
-현재 컨트롤러 성공 응답은 아직 `ApiResponse.success(...)`로 감싸지 않고, 각 컨트롤러가 반환하는 DTO 또는 `Map`을 그대로 반환한다.
-
-예시:
+`/test`, `/check`, 테스트용 `/login`을 제외한 주요 컨트롤러 응답은 `ApiResponse<T>`로 감싼다.
 
 ```json
 {
-  "memberName": "홍길동",
-  "memberPk": 1
+  "success": true,
+  "data": {},
+  "error": null
 }
 ```
 
-### 공통 에러 응답
-
-비즈니스 예외와 전역 예외 핸들러에서 처리하는 예외는 아래 형태로 반환한다.
+에러 응답은 `GlobalExceptionHandler`가 아래 형태로 반환한다.
 
 ```json
 {
@@ -94,7 +43,7 @@ POST   /login
 }
 ```
 
-`detail`이 없는 경우 `null`이다.
+`BusinessException(ErrorCode)`처럼 detail 없이 던진 경우 `detail`은 `null`이다.
 
 ```json
 {
@@ -109,26 +58,68 @@ POST   /login
 }
 ```
 
-### 에러 코드
+### 인증 방식
 
-| HTTP Status | code | message | 주요 발생 조건 |
+로그인 성공 시 서버가 `Set-Cookie` 헤더로 JWT 쿠키를 내려준다.
+
+```http
+Set-Cookie: token={jwt}; HttpOnly; Path=/; Max-Age=3600; SameSite={app.cookie.same-site}; Secure={app.cookie.secure}
+```
+
+`AuthInterceptor.passing`에 포함된 API와 `OPTIONS` 요청은 인증 없이 통과한다. 그 외 API는 `token` 쿠키 검증을 통과해야 한다.
+
+### 인증 없이 접근 가능한 API
+
+```text
+POST /member/login
+POST /member/register
+GET  /member/check-id
+GET  /post/max-page
+GET  /post/{post_pk}
+GET  /post/all
+GET  /test
+OPTIONS *
+```
+
+### 항상 차단되는 API
+
+```text
+GET /member/{pk}
+```
+
+### 인증이 필요한 API
+
+```text
+GET    /member
+POST   /member/logout
+GET    /member/me
+POST   /post
+PATCH  /post/{post_pk}
+DELETE /post/{post_pk}
+GET    /check
+POST   /login
+```
+
+### 에러 코드 기준
+
+| HTTP Status | code | 처리 위치 | 주요 발생 조건 |
 | --- | --- | --- | --- |
-| 400 | `BAD_REQUEST_PARAM` | 요청 값이 올바르지 않습니다. | 서비스 레벨 요청값 검증 실패 |
-| 400 | `BAD_REQUEST` | 파라미터의 형태가 올바르지 않습니다 | path/query 파라미터 타입 불일치 |
-| 400 | `MISSING_SERVLET_REQUEST_PARAMETER_EXCEPTION` | 필수 요청 값이 누락되었습니다. | 필수 query parameter 누락 |
-| 401 | `AUTHORIZATION_REQUIRED` | 로그인이 필요한 작업입니다. | 토큰 쿠키 없음 |
-| 401 | `LOGIN_FAILED` | 아이디 또는 비밀번호가 올바르지 않습니다. | 로그인 ID/PW 불일치 |
-| 403 | `FORBIDDEN_REQUEST` | 권한을 벗어난 요청입니다. | 강제 차단 API, 권한 없는 게시글 수정/삭제, 유효하지 않은 토큰 |
-| 404 | `POST_NOT_FOUND` | 게시글을 찾을 수 없습니다. | 게시글 없음 또는 삭제됨 |
-| 409 | `ID_CONFLICT` | 이미 사용 중인 아이디입니다. | 회원 ID 중복 |
-| 500 | `INTERNAL_SERVER_ERROR` | 서버 에러입니다. | 처리되지 않은 서버 오류 |
+| 400 | `BAD_REQUEST_PARAM` | `BusinessException` | 서비스 검증 실패 |
+| 400 | `BAD_REQUEST` | `MethodArgumentTypeMismatchException` | path/query 파라미터 타입 변환 실패 |
+| 400 | `MISSING_SERVLET_REQUEST_PARAMETER_EXCEPTION` | `MissingServletRequestParameterException` | 필수 query parameter 누락 |
+| 401 | `AUTHORIZATION_REQUIRED` | `AuthInterceptor` | `token` 쿠키 없음 |
+| 401 | `LOGIN_FAILED` | `MemberService.login` | 로그인 ID/PW 불일치 |
+| 403 | `FORBIDDEN_REQUEST` | `AuthInterceptor`, `PostService` | 차단 API 접근, 잘못된 JWT, 작성자 불일치 |
+| 404 | `POST_NOT_FOUND` | `PostService` | 게시글 없음 또는 삭제됨 |
+| 409 | `ID_CONFLICT` | `MemberService` | 회원 ID 중복 또는 DB에 동일 ID가 2개 이상 존재 |
+| 500 | `INTERNAL_SERVER_ERROR` | `Exception.class` fallback | 별도 핸들러가 없는 서버 예외 |
 
 ---
 
 ## Member API
 
 <details>
-<summary><code>GET /member</code> - 전체 회원 조회 / 인증 필요 / Response: <code>Member[]</code></summary>
+<summary><code>GET /member</code> - 전체 회원 조회 / 인증 필요</summary>
 
 ### Request
 
@@ -140,31 +131,82 @@ Cookie: token={jwt}
 ### Response 200
 
 ```json
-[
-  {
-    "memberPk": 1,
-    "memberId": "user01",
-    "memberName": "홍길동",
-    "memberEmail": "user01@example.com",
-    "memberPasswordHash": "$2a$10$..."
-  }
-]
+{
+  "success": true,
+  "data": [
+    {
+      "memberPk": 1,
+      "memberId": "user01",
+      "memberName": "홍길동",
+      "memberEmail": "user01@example.com",
+      "memberPasswordHash": "$2a$10$..."
+    }
+  ],
+  "error": null
+}
 ```
 
-### Error
+현재 `Member` 도메인을 그대로 반환하므로 `memberPasswordHash`가 응답에 포함된다.
 
-- 401 `AUTHORIZATION_REQUIRED`
-- 403 `FORBIDDEN_REQUEST`
+<details>
+<summary>Errors</summary>
 
-### 동작
+<details>
+<summary>401 <code>AUTHORIZATION_REQUIRED</code></summary>
 
-- `MemberMapper.findAll()` 결과를 그대로 반환한다.
-- 현재 응답에 `memberPasswordHash`가 포함될 수 있다.
+- 발생 위치: `AuthInterceptor.preHandle`
+- 조건: `Cookie`가 없거나 `token` 쿠키가 없음
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "AUTHORIZATION_REQUIRED",
+    "message": "로그인이 필요한 작업입니다.",
+    "status": 401,
+    "detail": {
+      "resource": "HTTP_REQUEST",
+      "action": "auth",
+      "reason": "인증이 필요한 작업입니다."
+    }
+  }
+}
+```
 
 </details>
 
 <details>
-<summary><code>GET /member/{pk}</code> - 회원 단건 조회 / 차단 / Response: <code>403</code></summary>
+<summary>403 <code>FORBIDDEN_REQUEST</code></summary>
+
+- 발생 위치: `AuthInterceptor.preHandle`
+- 조건: `token` 쿠키는 있으나 JWT 파싱, 서명 검증, 만료 검증, `memberPk` 변환 중 예외 발생
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "FORBIDDEN_REQUEST",
+    "message": "권한을 벗어난 요청입니다.",
+    "status": 403,
+    "detail": {
+      "resource": "JwtToken",
+      "action": "token",
+      "reason": "유효하지 않은 토큰입니다."
+    }
+  }
+}
+```
+
+</details>
+
+</details>
+
+</details>
+
+<details>
+<summary><code>GET /member/{pk}</code> - 회원 단건 조회 / 강제 차단</summary>
 
 ### Request
 
@@ -173,6 +215,8 @@ GET /member/1
 ```
 
 ### Response 403
+
+`GET /member/{var}` 패턴은 `AuthInterceptor.forbidden` 목록에 포함되어 컨트롤러 진입 전에 차단된다.
 
 ```json
 {
@@ -191,15 +235,23 @@ GET /member/1
 }
 ```
 
-### 동작
+<details>
+<summary>Errors</summary>
 
-- `GET /member/{var}` 패턴은 `AuthInterceptor.forbidden` 목록에 포함되어 있다.
-- 컨트롤러에는 `memberMapper.findByPk(pk)` 호출 코드가 있지만, 인터셉터에서 먼저 차단된다.
+<details>
+<summary>403 <code>FORBIDDEN_REQUEST</code></summary>
+
+- 발생 위치: `AuthInterceptor.preHandle`
+- 조건: 요청이 `GET /member/{var}` 패턴과 일치함
+
+</details>
+
+</details>
 
 </details>
 
 <details>
-<summary><code>GET /member/check-id</code> - ID 중복 확인 / 공개 / Query: <code>memberId</code> / Response: <code>{ duplicated }</code></summary>
+<summary><code>GET /member/check-id</code> - ID 중복 확인 / 공개</summary>
 
 ### Request
 
@@ -217,18 +269,44 @@ GET /member/check-id?memberId=user01
 
 ```json
 {
-  "duplicated": true
+  "success": true,
+  "data": {
+    "duplicated": true
+  },
+  "error": null
 }
 ```
 
-### Error
+<details>
+<summary>Errors</summary>
 
-- 400 `MISSING_SERVLET_REQUEST_PARAMETER_EXCEPTION`
+<details>
+<summary>400 <code>MISSING_SERVLET_REQUEST_PARAMETER_EXCEPTION</code></summary>
+
+- 발생 위치: `GlobalExceptionHandler.handleMissingParam`
+- 조건: `memberId` query parameter 누락
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "MISSING_SERVLET_REQUEST_PARAMETER_EXCEPTION",
+    "message": "필수 요청 값이 누락되었습니다.",
+    "status": 400,
+    "detail": null
+  }
+}
+```
+
+</details>
+
+</details>
 
 </details>
 
 <details>
-<summary><code>POST /member/login</code> - 로그인 / 공개 / Body: <code>memberId, memberPassword</code> / Response: <code>memberName, memberPk</code> + Cookie</summary>
+<summary><code>POST /member/login</code> - 로그인 / 공개</summary>
 
 ### Request
 
@@ -252,14 +330,25 @@ Set-Cookie: token={jwt}; HttpOnly; Path=/; Max-Age=3600
 
 ```json
 {
-  "memberName": "홍길동",
-  "memberPk": 1
+  "success": true,
+  "data": {
+    "memberName": "홍길동",
+    "memberPk": 1
+  },
+  "error": null
 }
 ```
 
-### Error
+JWT는 response body에 포함하지 않고 `token` 쿠키로만 내려간다.
 
-회원 ID가 없는 경우:
+<details>
+<summary>Errors</summary>
+
+<details>
+<summary>401 <code>LOGIN_FAILED</code> - ID 없음</summary>
+
+- 발생 위치: `MemberService.login`
+- 조건: `memberMapper.checkMemberUniqueWithId(memberId)` 결과가 `0`
 
 ```json
 {
@@ -278,7 +367,13 @@ Set-Cookie: token={jwt}; HttpOnly; Path=/; Max-Age=3600
 }
 ```
 
-비밀번호가 틀린 경우:
+</details>
+
+<details>
+<summary>401 <code>LOGIN_FAILED</code> - 비밀번호 불일치</summary>
+
+- 발생 위치: `MemberService.login`
+- 조건: `passwordEncoder.matches(...)` 결과가 `false`
 
 ```json
 {
@@ -297,7 +392,13 @@ Set-Cookie: token={jwt}; HttpOnly; Path=/; Max-Age=3600
 }
 ```
 
-회원 ID가 중복 데이터 상태인 경우:
+</details>
+
+<details>
+<summary>409 <code>ID_CONFLICT</code></summary>
+
+- 발생 위치: `MemberService.login`
+- 조건: 동일 `memberId` 회원 수가 `2` 이상
 
 ```json
 {
@@ -316,17 +417,14 @@ Set-Cookie: token={jwt}; HttpOnly; Path=/; Max-Age=3600
 }
 ```
 
-### 동작
+</details>
 
-- `memberId`로 회원 수를 확인한다.
-- 회원이 1명 있으면 비밀번호를 `BCryptPasswordEncoder.matches()`로 검증한다.
-- 성공 시 JWT를 생성하고 `token` 쿠키로 내려준다.
-- 응답 body에는 JWT가 포함되지 않는다.
+</details>
 
 </details>
 
 <details>
-<summary><code>POST /member/logout</code> - 로그아웃 / 인증 필요 / Response: <code>{ message }</code> + Cookie 삭제</summary>
+<summary><code>POST /member/logout</code> - 로그아웃 / 인증 필요</summary>
 
 ### Request
 
@@ -343,23 +441,39 @@ Set-Cookie: token=; HttpOnly; Path=/; Max-Age=0
 
 ```json
 {
-  "message": "로그아웃 되었습니다"
+  "success": true,
+  "data": {
+    "message": "로그아웃 되었습니다."
+  },
+  "error": null
 }
 ```
 
-### Error
+<details>
+<summary>Errors</summary>
 
-- 401 `AUTHORIZATION_REQUIRED`
-- 403 `FORBIDDEN_REQUEST`
+<details>
+<summary>401 <code>AUTHORIZATION_REQUIRED</code></summary>
 
-### 동작
-
-- `token` 쿠키를 빈 값으로 만들고 `Max-Age=0`으로 내려서 삭제시킨다.
+- 발생 위치: `AuthInterceptor.preHandle`
+- 조건: `Cookie`가 없거나 `token` 쿠키가 없음
 
 </details>
 
 <details>
-<summary><code>POST /member/register</code> - 회원가입 / 공개 / Body: <code>memberName, memberId, memberPassword, memberEmail</code> / Response: <code>memberPk</code></summary>
+<summary>403 <code>FORBIDDEN_REQUEST</code></summary>
+
+- 발생 위치: `AuthInterceptor.preHandle`
+- 조건: `token` 쿠키는 있으나 JWT 검증 실패
+
+</details>
+
+</details>
+
+</details>
+
+<details>
+<summary><code>POST /member/register</code> - 회원가입 / 공개</summary>
 
 ### Request
 
@@ -381,11 +495,24 @@ Content-Type: application/json
 
 ```json
 {
-  "memberPk": 1
+  "success": true,
+  "data": {
+    "memberPk": 1
+  },
+  "error": null
 }
 ```
 
-### Error 409
+현재 코드는 `memberService.register`의 반환값을 `memberPk`로 내려준다. MyBatis `insert`는 보통 영향받은 row 수를 반환하므로, 생성된 PK가 아니라 `1`일 수 있다.
+
+<details>
+<summary>Errors</summary>
+
+<details>
+<summary>409 <code>ID_CONFLICT</code></summary>
+
+- 발생 위치: `MemberService.register`
+- 조건: 동일 `memberId` 회원 수가 `1` 이상
 
 ```json
 {
@@ -404,16 +531,14 @@ Content-Type: application/json
 }
 ```
 
-### 동작
+</details>
 
-- `memberId` 중복 여부를 확인한다.
-- 중복 회원이 없으면 비밀번호를 BCrypt로 해시한 뒤 회원을 생성한다.
-- 현재 컨트롤러 응답 타입은 `Map<String, Integer>`이고, 서비스는 `memberMapper.insert(member)` 결과값을 반환한다.
+</details>
 
 </details>
 
 <details>
-<summary><code>GET /member/me</code> - 내 정보 조회 / 인증 필요 / Response: <code>MemberInfoResponse</code></summary>
+<summary><code>GET /member/me</code> - 내 정보 조회 / 인증 필요</summary>
 
 ### Request
 
@@ -426,22 +551,37 @@ Cookie: token={jwt}
 
 ```json
 {
-  "memberPk": 1,
-  "memberName": "홍길동",
-  "memberId": "user01",
-  "memberEmail": "user01@example.com"
+  "success": true,
+  "data": {
+    "memberPk": 1,
+    "memberName": "홍길동",
+    "memberId": "user01",
+    "memberEmail": "user01@example.com"
+  },
+  "error": null
 }
 ```
 
-### Error
+<details>
+<summary>Errors</summary>
 
-- 401 `AUTHORIZATION_REQUIRED`
-- 403 `FORBIDDEN_REQUEST`
+<details>
+<summary>401 <code>AUTHORIZATION_REQUIRED</code></summary>
 
-### 동작
+- 발생 위치: `AuthInterceptor.preHandle`
+- 조건: `Cookie`가 없거나 `token` 쿠키가 없음
 
-- `AuthInterceptor`가 JWT에서 `memberPk`를 꺼내 request attribute에 저장한다.
-- 컨트롤러는 `memberPk`로 회원 정보를 조회한다.
+</details>
+
+<details>
+<summary>403 <code>FORBIDDEN_REQUEST</code></summary>
+
+- 발생 위치: `AuthInterceptor.preHandle`
+- 조건: `token` 쿠키는 있으나 JWT 검증 실패
+
+</details>
+
+</details>
 
 </details>
 
@@ -450,7 +590,7 @@ Cookie: token={jwt}
 ## Post API
 
 <details>
-<summary><code>GET /post/max-page</code> - 최대 페이지 수 조회 / 공개 / Query: <code>maxPostCount</code> / Response: <code>maxPageCount</code></summary>
+<summary><code>GET /post/max-page</code> - 최대 페이지 수 조회 / 공개</summary>
 
 ### Request
 
@@ -468,13 +608,22 @@ GET /post/max-page?maxPostCount=10
 
 ```json
 {
-  "maxPageCount": 5
+  "success": true,
+  "data": {
+    "maxPageCount": 5
+  },
+  "error": null
 }
 ```
 
-### Error
+<details>
+<summary>Errors</summary>
 
-`maxPostCount <= 0`인 경우:
+<details>
+<summary>400 <code>BAD_REQUEST_PARAM</code></summary>
+
+- 발생 위치: `PostService.getMaxPageCount`
+- 조건: `maxPostCount <= 0`
 
 ```json
 {
@@ -487,18 +636,28 @@ GET /post/max-page?maxPostCount=10
     "detail": {
       "resource": "maxPostCount",
       "action": "select",
-      "reason": "해당 파라미터는 1 이상이여야 합니다."
+      "reason": "해당 파라미터는 1 이상이어야 합니다."
     }
   }
 }
 ```
 
-`maxPostCount`가 숫자가 아니면 400 `BAD_REQUEST`가 발생한다.
+</details>
+
+<details>
+<summary>400 <code>BAD_REQUEST</code></summary>
+
+- 발생 위치: `GlobalExceptionHandler.handleTypeMismatch`
+- 조건: `maxPostCount`가 `Integer`로 변환되지 않음
+
+</details>
+
+</details>
 
 </details>
 
 <details>
-<summary><code>GET /post/{post_pk}</code> - 게시글 상세 조회 / 공개 / Path: <code>post_pk</code> / Response: <code>PostViewResponse</code></summary>
+<summary><code>GET /post/{post_pk}</code> - 게시글 상세 조회 / 공개</summary>
 
 ### Request
 
@@ -510,17 +669,36 @@ GET /post/1
 
 ```json
 {
-  "postPk": 1,
-  "postTitle": "게시글 제목",
-  "postContent": "게시글 내용",
-  "postCreatedAt": "2026-05-10T12:00:00",
-  "postUpdatedAt": "2026-05-10T12:30:00",
-  "writerPk": 1,
-  "writerId": "user01"
+  "success": true,
+  "data": {
+    "postPk": 1,
+    "postTitle": "게시글 제목",
+    "postContent": "게시글 내용",
+    "postCreatedAt": "2026-05-10T12:00:00",
+    "postUpdatedAt": "2026-05-10T12:30:00",
+    "writerPk": 1,
+    "writerId": "user01"
+  },
+  "error": null
 }
 ```
 
-### Error 404
+<details>
+<summary>Errors</summary>
+
+<details>
+<summary>400 <code>BAD_REQUEST</code></summary>
+
+- 발생 위치: `GlobalExceptionHandler.handleTypeMismatch`
+- 조건: `post_pk`가 `Long`으로 변환되지 않음
+
+</details>
+
+<details>
+<summary>404 <code>POST_NOT_FOUND</code></summary>
+
+- 발생 위치: `PostService.getPost`
+- 조건: `postMapper.getPostByPk(postPk)` 결과가 `null`
 
 ```json
 {
@@ -539,12 +717,14 @@ GET /post/1
 }
 ```
 
-`post_pk`가 숫자가 아니면 400 `BAD_REQUEST`가 발생한다.
+</details>
+
+</details>
 
 </details>
 
 <details>
-<summary><code>GET /post/all</code> - 게시글 목록 조회 / 공개 / Query: <code>page, maxPostCount</code> / Response: <code>PostBoardResponse[]</code></summary>
+<summary><code>GET /post/all</code> - 게시글 목록 조회 / 공개</summary>
 
 ### Request
 
@@ -562,20 +742,29 @@ GET /post/all?page=1&maxPostCount=10
 ### Response 200
 
 ```json
-[
-  {
-    "postPk": 1,
-    "postTitle": "게시글 제목",
-    "writerId": "user01",
-    "postCreatedAt": "2026-05-10T12:00:00",
-    "postViewCount": 0
-  }
-]
+{
+  "success": true,
+  "data": [
+    {
+      "postPk": 1,
+      "postTitle": "게시글 제목",
+      "writerId": "user01",
+      "postCreatedAt": "2026-05-10T12:00:00",
+      "postViewCount": 0
+    }
+  ],
+  "error": null
+}
 ```
 
-### Error
+<details>
+<summary>Errors</summary>
 
-`page <= 0` 또는 `maxPostCount <= 0`인 경우:
+<details>
+<summary>400 <code>BAD_REQUEST_PARAM</code></summary>
+
+- 발생 위치: `PostService.getPosts`
+- 조건: `page <= 0` 또는 `maxPostCount <= 0`
 
 ```json
 {
@@ -588,18 +777,28 @@ GET /post/all?page=1&maxPostCount=10
     "detail": {
       "resource": "[page, maxPostCount]",
       "action": "update",
-      "reason": "두 인자는 모두 1 이상이여야 합니다."
+      "reason": "두 인자는 모두 1 이상이어야 합니다."
     }
   }
 }
 ```
 
-`page`, `maxPostCount`가 숫자가 아니면 400 `BAD_REQUEST`가 발생한다.
+</details>
+
+<details>
+<summary>400 <code>BAD_REQUEST</code></summary>
+
+- 발생 위치: `GlobalExceptionHandler.handleTypeMismatch`
+- 조건: `page` 또는 `maxPostCount`가 `int`로 변환되지 않음
+
+</details>
+
+</details>
 
 </details>
 
 <details>
-<summary><code>POST /post</code> - 게시글 생성 / 인증 필요 / Body: <code>postTitle, postContent</code> / Response: <code>message, postPk</code></summary>
+<summary><code>POST /post</code> - 게시글 생성 / 인증 필요</summary>
 
 ### Request
 
@@ -620,14 +819,23 @@ Cookie: token={jwt}
 
 ```json
 {
-  "message": "게시글이 생성되었습니다",
-  "postPk": 1
+  "success": true,
+  "data": {
+    "message": "게시글이 생성되었습니다.",
+    "postPk": 1
+  },
+  "error": null
 }
 ```
 
-### Error
+<details>
+<summary>Errors</summary>
 
-제목 검증 실패:
+<details>
+<summary>400 <code>BAD_REQUEST_PARAM</code> - 제목 검증 실패</summary>
+
+- 발생 위치: `PostService.createPost`
+- 조건: `postTitle == null`, 빈 문자열, 또는 금칙어 문자열 포함
 
 ```json
 {
@@ -646,7 +854,13 @@ Cookie: token={jwt}
 }
 ```
 
-내용 검증 실패:
+</details>
+
+<details>
+<summary>400 <code>BAD_REQUEST_PARAM</code> - 내용 검증 실패</summary>
+
+- 발생 위치: `PostService.createPost`
+- 조건: `postContent == null`, 빈 문자열, 또는 금칙어 문자열 포함
 
 ```json
 {
@@ -665,21 +879,30 @@ Cookie: token={jwt}
 }
 ```
 
-인증 실패:
+</details>
 
-- 401 `AUTHORIZATION_REQUIRED`
-- 403 `FORBIDDEN_REQUEST`
+<details>
+<summary>401 <code>AUTHORIZATION_REQUIRED</code></summary>
 
-### 동작
-
-- `AuthInterceptor`가 JWT에서 `memberPk`를 꺼내 request attribute에 저장한다.
-- 서비스에서 request의 `memberPk`를 인증된 회원 PK로 설정한다.
-- `postTitle`, `postContent`가 `null`, 빈 문자열, 금지어 포함 상태이면 400 응답이 발생한다.
+- 발생 위치: `AuthInterceptor.preHandle`
+- 조건: `Cookie`가 없거나 `token` 쿠키가 없음
 
 </details>
 
 <details>
-<summary><code>DELETE /post/{post_pk}</code> - 게시글 삭제 처리 / 인증 필요 / Path: <code>post_pk</code> / Response: <code>postPk, postDeleted</code></summary>
+<summary>403 <code>FORBIDDEN_REQUEST</code></summary>
+
+- 발생 위치: `AuthInterceptor.preHandle`
+- 조건: `token` 쿠키는 있으나 JWT 검증 실패
+
+</details>
+
+</details>
+
+</details>
+
+<details>
+<summary><code>DELETE /post/{post_pk}</code> - 게시글 삭제 처리 / 인증 필요</summary>
 
 ### Request
 
@@ -692,29 +915,47 @@ Cookie: token={jwt}
 
 ```json
 {
-  "postPk": 1,
-  "postDeleted": true
+  "success": true,
+  "data": {
+    "postPk": 1,
+    "postDeleted": true
+  },
+  "error": null
 }
 ```
 
-### Error
+<details>
+<summary>Errors</summary>
 
-게시글이 없거나 이미 삭제된 경우:
+<details>
+<summary>400 <code>BAD_REQUEST</code></summary>
 
-```json
-{
-  "success": false,
-  "data": null,
-  "error": {
-    "code": "POST_NOT_FOUND",
-    "message": "게시글을 찾을 수 없습니다.",
-    "status": 404,
-    "detail": null
-  }
-}
-```
+- 발생 위치: `GlobalExceptionHandler.handleTypeMismatch`
+- 조건: `post_pk`가 `Long`으로 변환되지 않음
 
-작성자가 아닌 사용자가 삭제하려는 경우:
+</details>
+
+<details>
+<summary>401 <code>AUTHORIZATION_REQUIRED</code></summary>
+
+- 발생 위치: `AuthInterceptor.preHandle`
+- 조건: `Cookie`가 없거나 `token` 쿠키가 없음
+
+</details>
+
+<details>
+<summary>403 <code>FORBIDDEN_REQUEST</code> - JWT 검증 실패</summary>
+
+- 발생 위치: `AuthInterceptor.preHandle`
+- 조건: `token` 쿠키는 있으나 JWT 검증 실패
+
+</details>
+
+<details>
+<summary>403 <code>FORBIDDEN_REQUEST</code> - 작성자 불일치</summary>
+
+- 발생 위치: `PostService.setPostDeletedTrueByUserDeleteRequest`
+- 조건: `checkMemberPkOwnsPost(postPk, memberPk)` 결과가 `false`
 
 ```json
 {
@@ -733,16 +974,23 @@ Cookie: token={jwt}
 }
 ```
 
-### 동작
+</details>
 
-- 실제 row 삭제가 아니라 `post_deleted = true`로 변경한다.
-- 삭제 전 `post_pk`가 존재하고 삭제되지 않은 게시글인지 확인한다.
-- 작성자 본인인지 확인한다.
+<details>
+<summary>404 <code>POST_NOT_FOUND</code></summary>
+
+- 발생 위치: `PostService.setPostDeletedTrueByUserDeleteRequest`
+- 조건: `postMapper.checkPostByPk(postPk) <= 0`
+- 특이사항: 이 케이스는 `BusinessException(ErrorCode.POST_NOT_FOUND)`로 던져져 `detail`이 `null`
+
+</details>
+
+</details>
 
 </details>
 
 <details>
-<summary><code>PATCH /post/{post_pk}</code> - 게시글 수정 / 인증 필요 / Body: <code>postTitle, postContent</code> / Response: <code>postPk, postTitle, postContent</code></summary>
+<summary><code>PATCH /post/{post_pk}</code> - 게시글 수정 / 인증 필요</summary>
 
 ### Request
 
@@ -754,6 +1002,7 @@ Cookie: token={jwt}
 
 ```json
 {
+  "postPk": 1,
   "postTitle": "수정된 제목",
   "postContent": "수정된 내용"
 }
@@ -763,16 +1012,52 @@ Cookie: token={jwt}
 
 ```json
 {
-  "postPk": 1,
-  "postTitle": "수정된 제목",
-  "postContent": "수정된 내용",
-  "memberPk": null
+  "success": true,
+  "data": {
+    "postPk": 1,
+    "postTitle": "수정된 제목",
+    "postContent": "수정된 내용",
+    "memberPk": null
+  },
+  "error": null
 }
 ```
 
-### Error
+현재 서비스는 소유자 확인 시 path variable `post_pk`가 아니라 request body의 `postPk`를 먼저 사용한다. 따라서 body에도 `postPk`가 있어야 정상적으로 권한 확인이 가능하다. DB 업데이트 직전에는 `request.setPostPk(postPk)`로 path variable 값을 다시 넣는다.
 
-작성자가 아닌 사용자가 수정하려는 경우:
+<details>
+<summary>Errors</summary>
+
+<details>
+<summary>400 <code>BAD_REQUEST</code></summary>
+
+- 발생 위치: `GlobalExceptionHandler.handleTypeMismatch`
+- 조건: path variable `post_pk`가 `Long`으로 변환되지 않음
+
+</details>
+
+<details>
+<summary>401 <code>AUTHORIZATION_REQUIRED</code></summary>
+
+- 발생 위치: `AuthInterceptor.preHandle`
+- 조건: `Cookie`가 없거나 `token` 쿠키가 없음
+
+</details>
+
+<details>
+<summary>403 <code>FORBIDDEN_REQUEST</code> - JWT 검증 실패</summary>
+
+- 발생 위치: `AuthInterceptor.preHandle`
+- 조건: `token` 쿠키는 있으나 JWT 검증 실패
+
+</details>
+
+<details>
+<summary>403 <code>FORBIDDEN_REQUEST</code> - 작성자 불일치</summary>
+
+- 발생 위치: `PostService.updatePost`
+- 조건: `checkMemberPkOwnsPost(request.getPostPk(), memberPk)` 결과가 `false`
+- 특이사항: `action` 값은 현재 코드상 `"delete"`로 내려간다.
 
 ```json
 {
@@ -791,7 +1076,13 @@ Cookie: token={jwt}
 }
 ```
 
-게시글이 없거나 이미 삭제된 경우:
+</details>
+
+<details>
+<summary>404 <code>POST_NOT_FOUND</code></summary>
+
+- 발생 위치: `PostService.updatePost`
+- 조건: `postMapper.checkPostByPk(postPk) <= 0`
 
 ```json
 {
@@ -810,14 +1101,18 @@ Cookie: token={jwt}
 }
 ```
 
-### 동작
+</details>
 
-- 수정 전 작성자 본인인지 확인한다.
-- 그 다음 `post_pk`가 존재하고 삭제되지 않은 게시글인지 확인한다.
-- `post_updated_at`을 현재 시각으로 변경한다.
-- 현재 코드 기준 수정 요청의 제목/내용 null 또는 빈 문자열 검증은 없다.
+<details>
+<summary>500 <code>INTERNAL_SERVER_ERROR</code> - body <code>postPk</code> 누락 가능</summary>
 
-주의: 현재 서비스는 소유자 확인 시 path variable `post_pk`가 아니라 request body의 `postPk`를 사용한다.
+- 발생 위치: `GlobalExceptionHandler.handleException`
+- 조건: body의 `postPk`가 `null`인 상태에서 `checkMemberPkOwnsPost(request.getPostPk(), memberPk)` 호출 후 매퍼/DB 레이어에서 처리되지 않은 예외가 발생하는 경우
+- 특이사항: 현재 코드는 이 값을 서비스에서 직접 400으로 검증하지 않는다.
+
+</details>
+
+</details>
 
 </details>
 
@@ -826,7 +1121,7 @@ Cookie: token={jwt}
 ## Test API
 
 <details>
-<summary><code>GET /test</code> - 테스트 API / 공개 / Response: <code>{ message }</code></summary>
+<summary><code>GET /test</code> - 테스트 API / 공개</summary>
 
 ### Request
 
@@ -836,21 +1131,21 @@ GET /test
 
 ### Response 200
 
+`ApiResponse`로 감싸지 않는다.
+
 ```json
 {
-  "message": "hello"
+  "message": "hello",
+  "dbConnection": true
 }
 ```
 
-### 동작
-
-- 내부 `AtomicInteger` 값을 증가시키고 콘솔에 출력한다.
-- 약 100ms 대기 후 응답한다.
+`testMapper.checkConnection()`에서 예외가 발생해도 컨트롤러 내부에서 catch하고 `dbConnection: false`로 응답한다.
 
 </details>
 
 <details>
-<summary><code>POST /login</code> - 테스트 로그인 API / 인증 필요 / 현재 정상 응답 없음</summary>
+<summary><code>POST /login</code> - 테스트용 로그인 API / 인증 필요</summary>
 
 ### Request
 
@@ -870,16 +1165,31 @@ Cookie: token={jwt}
 
 현재 컨트롤러가 `null`을 반환한다.
 
-### 동작
+<details>
+<summary>Errors</summary>
 
-- 현재 `AuthInterceptor.passing`에 없으므로 인증 필요 API다.
-- 기존 JWT 테스트 코드가 주석 처리되어 있다.
-- 실제 로그인은 `POST /member/login`을 사용한다.
+<details>
+<summary>401 <code>AUTHORIZATION_REQUIRED</code></summary>
+
+- 발생 위치: `AuthInterceptor.preHandle`
+- 조건: `Cookie`가 없거나 `token` 쿠키가 없음
 
 </details>
 
 <details>
-<summary><code>GET /check</code> - Authorization 헤더 JWT 확인 / 인증 필요 / Header: <code>Authorization</code> / Response: <code>username</code></summary>
+<summary>403 <code>FORBIDDEN_REQUEST</code></summary>
+
+- 발생 위치: `AuthInterceptor.preHandle`
+- 조건: `token` 쿠키는 있으나 JWT 검증 실패
+
+</details>
+
+</details>
+
+</details>
+
+<details>
+<summary><code>GET /check</code> - Authorization 헤더 JWT 확인 / 인증 필요</summary>
 
 ### Request
 
@@ -891,18 +1201,53 @@ Cookie: token={jwt}
 
 ### Response 200
 
+`ApiResponse`로 감싸지 않는다.
+
 ```json
 {
   "username": "1"
 }
 ```
 
-### 동작
+`username` 필드에는 실제 username이 아니라 `jwtService.getMemberPk(token)` 결과가 들어간다.
 
-- 현재 `AuthInterceptor.passing`에 없으므로 인증 필요 API다.
-- `Authorization` 헤더에서 `Bearer ` 문자열을 제거한 뒤 JWT를 파싱한다.
-- `jwtService.getMemberPk(token)` 결과를 `username` 필드명으로 반환한다.
-- 실제 의미는 username이 아니라 memberPk에 가깝다.
-- `Authorization` 헤더가 없으면 전역 예외 핸들러에서 500 `INTERNAL_SERVER_ERROR`로 처리될 수 있다.
+<details>
+<summary>Errors</summary>
+
+<details>
+<summary>401 <code>AUTHORIZATION_REQUIRED</code></summary>
+
+- 발생 위치: `AuthInterceptor.preHandle`
+- 조건: `Cookie`가 없거나 `token` 쿠키가 없음
+
+</details>
+
+<details>
+<summary>403 <code>FORBIDDEN_REQUEST</code> - 쿠키 JWT 검증 실패</summary>
+
+- 발생 위치: `AuthInterceptor.preHandle`
+- 조건: `token` 쿠키는 있으나 JWT 검증 실패
+
+</details>
+
+<details>
+<summary>500 <code>INTERNAL_SERVER_ERROR</code> - Authorization 헤더 누락</summary>
+
+- 발생 위치: `GlobalExceptionHandler.handleException`
+- 조건: `Authorization` request header 누락
+- 이유: `TestController.check`의 `@RequestHeader("Authorization")` 누락 예외를 별도 핸들러가 처리하지 않으므로 fallback으로 잡힌다.
+
+</details>
+
+<details>
+<summary>500 <code>INTERNAL_SERVER_ERROR</code> - Authorization JWT 파싱 실패</summary>
+
+- 발생 위치: `GlobalExceptionHandler.handleException`
+- 조건: `Authorization` 헤더의 `Bearer {jwt}` 토큰이 `jwtService.getMemberPk(token)`에서 파싱 또는 검증 실패
+- 이유: 컨트롤러 내부에서 직접 호출하며 `BusinessException`으로 변환하지 않는다.
+
+</details>
+
+</details>
 
 </details>
