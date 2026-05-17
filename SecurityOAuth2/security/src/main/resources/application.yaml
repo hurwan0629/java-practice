@@ -1,0 +1,23 @@
+server:
+  port: 8080
+
+spring:
+  mvc:
+    view:
+      prefix: /WEB-INF/views/
+      suffix: .jsp
+  application:
+    name: security
+  security:
+    user:
+      name: admin
+      password: 1234
+    oauth:
+      client:
+        registration:
+          google:
+            client-id:
+            client-secret:
+            scope:
+              - email
+              - profile
