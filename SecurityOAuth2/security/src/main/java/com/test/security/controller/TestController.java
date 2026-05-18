@@ -1,5 +1,6 @@
 package com.test.security.controller;
 
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,7 +17,14 @@ public class TestController {
 
     @GetMapping("/")
     public String home(Principal principal, Model model) {
-        model.addAttribute("isUserLoggedIn", SecurityContextHolder.getContext().getAuthentication() != null);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        boolean isUserLoggedIn =
+                authentication != null &&
+                        authentication.isAuthenticated() &&
+                        !(authentication instanceof AnonymousAuthenticationToken);
+
+        model.addAttribute("isUserLoggedIn", isUserLoggedIn);
         model.addAttribute("securityContext", SecurityContextHolder.getContext().toString());
         return "main";
     }

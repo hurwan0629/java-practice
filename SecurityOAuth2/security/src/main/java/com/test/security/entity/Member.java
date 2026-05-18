@@ -20,15 +20,31 @@ public class Member {
 
     private String username;
     private String password;
+    private String role;
 
     @Builder
-    public Member(String username, String password) {
+    public Member(String username, String password, String role) {
         this.username = username;
         this.password = password;
+        this.role = role;
     }
 
     public void changeUsername(String username) {
         this.username = username;
+    }
+    public void changeRole(String role) {
+        if(role.equals("Basic")) {
+            this.role = role;
+        }
+        else if(role.equals("Advanced")) {
+            this.role = role;
+        }
+        else if(role.equals("Pro")) {
+            this.role = role;
+        }
+        else if(role.equals("Ultimate")) {
+            this.role = role;
+        }
     }
 
 }

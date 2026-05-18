@@ -28,10 +28,21 @@ public class SecurityController {
     @GetMapping("/login-success")
     public String loginSuccess(Authentication authentication, Model model){
         System.out.println("/login success");
-        model.addAttribute("loginUserName", authentication.getName());
-
+        if(authentication != null) {
+            System.out.println("authentication is no null");
+            model.addAttribute("loginUserName", authentication.getName());
+        }
         return "security/login-success";
     }
+
+    @GetMapping("/access-denied")
+    public String accessDenied(Authentication authentication, Model model) {
+        if(authentication != null) {
+            model.addAttribute("userAuthList",authentication.getAuthorities());
+        }
+        return "security/access-denied";
+    }
+
     @GetMapping("/login-fail")
     public String loginFail(){
         System.out.println("/login-fail");
