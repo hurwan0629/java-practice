@@ -77,4 +77,9 @@ Maven/Gradle의 빌드 과정에 대해서 조금 더 알아보기,
 
 추가로 순수 자바의 Optional, 함수형 프로그래밍, Exception 및 오류, 인터페이스/추상클래스, 익명함수, 비동기 등에 대해서도 실습할 예정입니다.
 
+# 2026-05-19
+## 회원별 상태들 확인 후 로그인 상태 반환, 권한에 따른 인가 로직 확인해보기.
+우선 이전까지는 주로 `.formLogin()`과 `exceptionHandling`, `logout`를 주로 다루었다.
 
+내부적으로는 성공/실패 핸들러와 가장 중요 로직중 하나인 UserDetailService를 통해 JPA 레포지토리인 **MemberRepository**를 사용한 회원 탑색을 통한 UserDetails를 생성해주는 익명 클래스 또는 람다를 만들어주는 로직을 만들어주었다.
+이때 반환된 값을 기반으로 username(id), password, role이 할당된 User을 확인해주는 방식으로 설정하였다.

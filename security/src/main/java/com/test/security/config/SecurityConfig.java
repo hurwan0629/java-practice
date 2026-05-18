@@ -9,6 +9,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -19,6 +21,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 @Configuration
 public class SecurityConfig {
@@ -26,18 +29,22 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf ->  csrf
-                        .ignoringRequestMatchers("/h2-console/**")
-                )
-                .headers(headers -> headers
-                        .frameOptions(frame -> frame.sameOrigin())
-                )
+            .csrf(csrf ->  csrf
+                    .ignoringRequestMatchers("/h2-console/**")
+            )
+            .headers(headers -> headers
+                    .frameOptions(frame -> frame.sameOrigin())
+            )
             .authorizeHttpRequests(auth -> auth
 //                    .requestMatchers(HttpMethod.GET, "/WEB-INF/views/**.jsp").permitAll()
                     .dispatcherTypeMatchers(DispatcherType.FORWARD).permitAll()
                     .requestMatchers(
-                            HttpMethod.GET,"/", "/public",
+                            HttpMethod.GET,"/", "/public", "/login-dashboard",
                             "/login-success", "/login-custom", "/login-fail").permitAll() // 루트(index)와 /public는 모든 사용자에 대해서 접근 가능하게 설정
+                        .requestMatchers(HttpMethod.GET, "/basic").hasRole("Basic")
+                        .requestMatchers(HttpMethod.GET, "/advanced").hasRole("Advanced")
+                        .requestMatchers(HttpMethod.GET, "/pro").hasRole("Pro")
+                        .requestMatchers(HttpMethod.GET, "/ultimate").hasRole("Ultimate")
                     .requestMatchers("/h2-console/**").permitAll()
                     .anyRequest().authenticated() // 나머지 요청들은 모두 "인증된" 사용자 이여야함.
             )
@@ -59,7 +66,10 @@ public class SecurityConfig {
                     .logoutUrl("/logout-custom")
                     .logoutSuccessUrl("/logout-success")
                     .permitAll()
-            );
+            )
+            .sessionManagement(session -> session
+                    .maximumSessions(-1)
+                    .sessionRegistry(sessionRegistry()));
 
         return http.build();
     }
@@ -143,6 +153,13 @@ public class SecurityConfig {
                         .role("Ultimate")
                         .build());
             }
+            if (memberRepository.findByUsername("admin").isEmpty()) {
+                memberRepository.save(Member.builder()
+                        .username("admin")
+                        .password(passwordEncoder.encode("admin1234"))
+                        .role("admin")
+                        .build());
+            }
         };
     }
 
@@ -179,5 +196,16 @@ public class SecurityConfig {
         return (req, res, accessDeniedException) -> {
             res.sendRedirect("/access-denied");
         };
+    }
+
+    // 로그인 사용자를 확인하기 위한 객체
+    @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
+
+    @Bean
+    public HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
     }
 }
