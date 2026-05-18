@@ -13,12 +13,19 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .csrf(csrf ->  csrf
+                        .ignoringRequestMatchers("/h2-console/**")
+                )
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.sameOrigin())
+                )
             .authorizeHttpRequests(auth -> auth
 //                    .requestMatchers(HttpMethod.GET, "/WEB-INF/views/**.jsp").permitAll()
                     .dispatcherTypeMatchers(DispatcherType.FORWARD).permitAll()
                     .requestMatchers(
-                            HttpMethod.GET,"/", "/public", "/private",
+                            HttpMethod.GET,"/", "/public",
                             "/login-success", "/login-custom", "/login-fail").permitAll() // 루트(index)와 /public는 모든 사용자에 대해서 접근 가능하게 설정
+                    .requestMatchers("/h2-console/**").permitAll()
                     .anyRequest().authenticated() // 나머지 요청들은 모두 "인증된" 사용자 이여야함.
             )
             .formLogin(form -> form
