@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.security.Principal;
 
@@ -28,17 +29,20 @@ public class TestController {
         model.addAttribute("securityContext", SecurityContextHolder.getContext().toString());
         return "main";
     }
-
+    
+    @ResponseBody
     @GetMapping("/public")
     public String publicPage() {
         return "public - 누구나 접근 가능";
     }
-
+    
+    @ResponseBody
     @GetMapping("/private")
     public String privatePage() {
         return "private - 로그인 필요";
     }
-
+    
+    @ResponseBody
     @GetMapping("/principal")
     public String principalForm(Principal principal) {
         if(principal == null) {
@@ -46,7 +50,8 @@ public class TestController {
         }
         return principal.toString();
     }
-
+    
+    @ResponseBody
     @GetMapping("/security-context")
     public String showSecurityContextForm() {
         SecurityContext context = SecurityContextHolder.getContext();

@@ -1,6 +1,24 @@
 해당 프로젝트는 Ornably 작업을 했을 때 사용하였던 Spring Security + OAuth2 의 구조를 복습하기 위해서 만들었습니다.
 프론트 또는 cors 공부를 계획하진 않았기 때문에 우선 .jsp 를 통해서 작업을 할 생각입니다.
 
+# 결과
+## 페이지
+### 모든 사용자
+- `/`: 메인페이지. security context의 형태를 볼 수 있으며 로그아웃 버튼 존재
+- `/public`: 모든 사용자가 갈 수 있음
+- `/h2-console/**`: h2 데이터베이스 조작
+- `/login-custom`: 로그인 페이지 (아이디, 비번)
+- `/login-dashboard`: 누가 로그인 되어있는지
+- `/login-fail`: 로그인 실패시 화면
+- `/logout-success`: 로그아웃 성공
+### basic advanced pro ultimamte
+- 각각 `/[role]`를 갈 수 있음
+### 인증 된 상태
+- `/login-success`: 로그인 성공
+- `/private`: 개인 화면
+- `/principal`: 사용자 정보 반환 (json body)
+- `/security-context`: 상위의 사용자 정보 반환
+
 # 2026-05-18
 현재 시큐리티 기능과 함께 로그인 과정에 DB와 연동하여 회원을 검사하기 위해 H2 Database와 JPA 의존성을 받았습니다.
 

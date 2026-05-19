@@ -4,6 +4,7 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+**/target/
 
 ### STS ###
 .apt_generated
@@ -38,5 +39,7 @@ out/
 
 ### Docker ###
 **/docker/postgres_data/**
-
 *.env*
+
+### DataBase ###
+security/data/*.mv.db

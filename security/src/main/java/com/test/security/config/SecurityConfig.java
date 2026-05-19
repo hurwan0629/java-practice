@@ -41,10 +41,10 @@ public class SecurityConfig {
                     .requestMatchers(
                             HttpMethod.GET,"/", "/public", "/login-dashboard",
                             "/login-success", "/login-custom", "/login-fail").permitAll() // 루트(index)와 /public는 모든 사용자에 대해서 접근 가능하게 설정
-                        .requestMatchers(HttpMethod.GET, "/basic").hasRole("Basic")
-                        .requestMatchers(HttpMethod.GET, "/advanced").hasRole("Advanced")
-                        .requestMatchers(HttpMethod.GET, "/pro").hasRole("Pro")
-                        .requestMatchers(HttpMethod.GET, "/ultimate").hasRole("Ultimate")
+                    .requestMatchers(HttpMethod.GET, "/basic").hasRole("Basic")
+                    .requestMatchers(HttpMethod.GET, "/advanced").hasRole("Advanced")
+                    .requestMatchers(HttpMethod.GET, "/pro").hasRole("Pro")
+                    .requestMatchers(HttpMethod.GET, "/ultimate").hasRole("Ultimate")
                     .requestMatchers("/h2-console/**").permitAll()
                     .anyRequest().authenticated() // 나머지 요청들은 모두 "인증된" 사용자 이여야함.
             )
